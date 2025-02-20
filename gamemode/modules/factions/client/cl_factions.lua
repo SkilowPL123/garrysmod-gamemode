@@ -1,2 +1,0 @@
--- Klient: Frakcje
--- Tutaj dodaj kod klienta związany z frakcjami

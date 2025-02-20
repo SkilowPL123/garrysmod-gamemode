@@ -1,2 +1,0 @@
--- Klient: PAC3
--- Tutaj dodaj kod klienta związany z PAC3

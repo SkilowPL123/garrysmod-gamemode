@@ -1,2 +1,0 @@
--- GUI: Interakcje
--- Tutaj dodaj kod GUI związany z interakcjami

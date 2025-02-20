@@ -1,2 +1,0 @@
--- Klient: Ekwipunek
--- Tutaj dodaj kod klienta związany z systemem ekwipunku

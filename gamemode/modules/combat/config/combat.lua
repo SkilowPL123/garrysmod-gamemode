@@ -1,2 +1,0 @@
--- Konfiguracja walki
--- Tutaj dodaj ustawienia związane z systemem walki

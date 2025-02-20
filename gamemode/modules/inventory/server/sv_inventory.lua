@@ -1,2 +1,0 @@
--- Serwer: Ekwipunek
--- Tutaj dodaj kod serwera związany z systemem ekwipunku
