@@ -1,0 +1,2 @@
+-- Serwer: Frakcje
+-- Tutaj dodaj kod serwera związany z frakcjami

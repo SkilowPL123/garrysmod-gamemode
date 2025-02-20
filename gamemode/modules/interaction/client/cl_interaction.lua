@@ -1,0 +1,2 @@
+-- Klient: Interakcje
+-- Tutaj dodaj kod klienta związany z interakcjami

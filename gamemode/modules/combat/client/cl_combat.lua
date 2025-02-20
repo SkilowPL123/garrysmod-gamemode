@@ -1,0 +1,2 @@
+-- Klient: Walka
+-- Tutaj dodaj kod klienta związany z systemem walki

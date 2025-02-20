@@ -1,0 +1,2 @@
+-- Konfiguracja przedmiotów
+-- Tutaj dodaj ustawienia związane z przedmiotami

@@ -1,0 +1,2 @@
+-- Serwer: Interakcje
+-- Tutaj dodaj kod serwera związany z interakcjami

@@ -1,0 +1,2 @@
+-- Serwer: Walka
+-- Tutaj dodaj kod serwera związany z systemem walki
