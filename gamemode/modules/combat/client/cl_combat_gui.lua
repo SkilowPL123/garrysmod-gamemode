@@ -1,0 +1,2 @@
+-- GUI: Walka
+-- Tutaj dodaj kod GUI związany z systemem walki

@@ -1,0 +1,2 @@
+-- GUI: Ekwipunek
+-- Tutaj dodaj kod GUI związany z systemem ekwipunku

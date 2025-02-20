@@ -16,41 +16,37 @@ my_hl2rp_gamemode/
 │   │   ├── character/
 │   │   │   ├── client/
 │   │   │   │   ├── cl_character.lua
+│   │   │   │   ├── cl_character_gui.lua
 │   │   │   ├── server/
 │   │   │   │   ├── sv_character.lua
-│   │   │   ├── entities/
-│   │   │   ├── items/
 │   │   │   ├── config/
 │   │   │   │   ├── characters.lua
 │   │   ├── combat/
 │   │   │   ├── client/
 │   │   │   │   ├── cl_combat.lua
+│   │   │   │   ├── cl_combat_gui.lua
 │   │   │   ├── server/
 │   │   │   │   ├── sv_combat.lua
-│   │   │   ├── entities/
-│   │   │   ├── items/
 │   │   │   ├── config/
 │   │   │   │   ├── combat.lua
 │   │   ├── inventory/
 │   │   │   ├── client/
 │   │   │   │   ├── cl_inventory.lua
+│   │   │   │   ├── cl_inventory_gui.lua
 │   │   │   ├── server/
 │   │   │   │   ├── sv_inventory.lua
-│   │   │   ├── entities/
-│   │   │   ├── items/
 │   │   │   ├── config/
 │   │   │   │   ├── items.lua
 │   │   ├── interaction/
 │   │   │   ├── client/
 │   │   │   │   ├── cl_interaction.lua
+│   │   │   │   ├── cl_interaction_gui.lua
 │   │   │   ├── server/
 │   │   │   │   ├── sv_interaction.lua
-│   │   │   ├── entities/
-│   │   │   ├── items/
-│   │   │   ├── config/
 │   │   ├── factions/
 │   │   │   ├── client/
 │   │   │   │   ├── cl_factions.lua
+│   │   │   │   ├── cl_factions_gui.lua
 │   │   │   ├── server/
 │   │   │   │   ├── sv_factions.lua
 │   │   │   ├── config/

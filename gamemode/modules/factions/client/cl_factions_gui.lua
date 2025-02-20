@@ -1,0 +1,2 @@
+-- GUI: Frakcje
+-- Tutaj dodaj kod GUI związany z frakcjami
