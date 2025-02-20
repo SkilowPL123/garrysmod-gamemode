@@ -28,7 +28,7 @@ net.Receive("CreateCharacter", function(len, ply)
     table.insert(characters[ply:SteamID()], character)
 
     -- Zapisz postać w bazie danych
-    SaveCharacter(ply:SteamID(), name, model, character.inventory)
+    SaveCharacter(ply:SteamID(), name, model, character.inventory, {})
 
     net.Start("CharacterData")
     net.WriteTable(character)

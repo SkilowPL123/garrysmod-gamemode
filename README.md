@@ -21,10 +21,14 @@ my_hl2rp_gamemode/
 │   │   │   │   ├── sv_character.lua
 │   │   │   ├── config/
 │   │   │   │   ├── characters.lua
+│   │   │   ├── pac3/
+│   │   │   │   ├── client/
+│   │   │   │   │   ├── cl_pac3.lua
+│   │   │   │   ├── server/
+│   │   │   │   │   ├── sv_pac3.lua
 │   │   ├── combat/
 │   │   │   ├── client/
 │   │   │   │   ├── cl_combat.lua
-│   │   │   │   ├── cl_combat_gui.lua
 │   │   │   ├── server/
 │   │   │   │   ├── sv_combat.lua
 │   │   │   ├── config/
@@ -32,7 +36,6 @@ my_hl2rp_gamemode/
 │   │   ├── inventory/
 │   │   │   ├── client/
 │   │   │   │   ├── cl_inventory.lua
-│   │   │   │   ├── cl_inventory_gui.lua
 │   │   │   ├── server/
 │   │   │   │   ├── sv_inventory.lua
 │   │   │   ├── config/
@@ -40,13 +43,11 @@ my_hl2rp_gamemode/
 │   │   ├── interaction/
 │   │   │   ├── client/
 │   │   │   │   ├── cl_interaction.lua
-│   │   │   │   ├── cl_interaction_gui.lua
 │   │   │   ├── server/
 │   │   │   │   ├── sv_interaction.lua
 │   │   ├── factions/
 │   │   │   ├── client/
 │   │   │   │   ├── cl_factions.lua
-│   │   │   │   ├── cl_factions_gui.lua
 │   │   │   ├── server/
 │   │   │   │   ├── sv_factions.lua
 │   │   │   ├── config/

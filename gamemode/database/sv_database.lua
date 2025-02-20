@@ -17,7 +17,8 @@ function db:onConnected()
             steamid VARCHAR(20) NOT NULL,
             name VARCHAR(100) NOT NULL,
             model VARCHAR(100) NOT NULL,
-            inventory TEXT NOT NULL
+            inventory TEXT NOT NULL,
+            pac3config TEXT NOT NULL
         );
     ]])
     query:start()
@@ -30,15 +31,16 @@ end
 db:connect()
 
 -- Dodaj funkcję do zapisywania postaci
-function SaveCharacter(steamid, name, model, inventory)
+function SaveCharacter(steamid, name, model, inventory, pac3config)
     local query = db:prepare([[
-        INSERT INTO characters (steamid, name, model, inventory)
-        VALUES (?, ?, ?, ?);
+        INSERT INTO characters (steamid, name, model, inventory, pac3config)
+        VALUES (?, ?, ?, ?, ?);
     ]])
     query:setString(1, steamid)
     query:setString(2, name)
     query:setString(3, model)
     query:setString(4, util.TableToJSON(inventory))
+    query:setString(5, util.TableToJSON(pac3config))
     query:start()
 end
 
