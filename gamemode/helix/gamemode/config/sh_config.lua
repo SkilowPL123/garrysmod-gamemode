@@ -96,7 +96,7 @@ ix.config.Add("saveInterval", 300, "How often characters save in seconds.", nil,
 	category = "characters"
 })
 ix.config.Add("walkSpeed", 130, "How fast a player normally walks.", function(oldValue, newValue)
-	for _, v in player.Iterator()	do
+	for _, v in ipairs(player.GetAll())	do
 		v:SetWalkSpeed(newValue)
 	end
 end, {
@@ -104,8 +104,13 @@ end, {
 	category = "characters"
 })
 ix.config.Add("runSpeed", 235, "How fast a player normally runs.", function(oldValue, newValue)
-	for _, v in player.Iterator()	do
-		v:SetRunSpeed(newValue)
+	for _, v in ipairs(player.GetAll())	do
+		local character = v:GetCharacter()
+
+		if (character) then
+			-- TODO: don't replicate code from skills plugin
+			v:SetRunSpeed(newValue * (1 + character:GetSkillModified("athletics") * 0.1 * 0.25))
+		end
 	end
 end, {
 	data = {min = 75, max = 500},
@@ -138,10 +143,6 @@ ix.config.Add("defaultMoney", 0, "The amount of money that players start with.",
 	category = "characters",
 	data = {min = 0, max = 1000}
 })
-ix.config.Add("minMoneyDropAmount", 1, "The minimum amount of money that can be dropped.", nil, {
-	category = "characters",
-	data = {min = 1, max = 1000}
-})
 ix.config.Add("allowVoice", false, "Whether or not voice chat is allowed.", function(oldValue, newValue)
 	if (SERVER) then
 		hook.Run("VoiceToggled", newValue)
@@ -162,9 +163,6 @@ ix.config.Add("weaponAlwaysRaised", false, "Whether or not weapons are always ra
 })
 ix.config.Add("weaponRaiseTime", 1, "The time it takes for a weapon to raise.", nil, {
 	data = {min = 0.1, max = 60, decimals = 1},
-	category = "server"
-})
-ix.config.Add("allowBusiness", true, "Whether or not business is enabled.", nil, {
 	category = "server"
 })
 ix.config.Add("maxHoldWeight", 100, "The maximum weight that a player can carry in their hands.", nil, {

@@ -1,4 +1,3 @@
-
 AddCSLuaFile()
 
 ENT.Type = "anim"
@@ -10,11 +9,11 @@ ENT.PhysgunDisable = true
 ENT.bNoPersist = true
 
 ENT.MaxRenderDistance = math.pow(256, 2)
-ENT.MaxStock = 4
+ENT.MaxStock = 100
 ENT.Items = {
-	{"REGULAR", "water", 15},
-	{"SPARKLING", "water_sparkling", 25},
-	{"SPECIAL", "water_special", 35}
+	{"REGULAR", "breens_water", 7},
+	{"SMOOTH", "smooth_breens_water", 18},
+	{"SPECIAL", "special_breens_water", 33}
 }
 
 function ENT:GetStock(id)
@@ -26,6 +25,8 @@ function ENT:GetAllStock()
 end
 
 if (SERVER) then
+	ENT.questCoolDown = {}
+
 	function ENT:Initialize()
 		self:SetModel("models/props_interiors/vendingmachinesoda01a.mdl")
 		self:PhysicsInit(SOLID_VPHYSICS)
@@ -103,19 +104,28 @@ if (SERVER) then
 	end
 
 	function ENT:Use(client)
+		local character = client:GetCharacter()
 		local buttonID = self:GetClosestButton(client)
 
 		if (buttonID) then
 			client:EmitSound("buttons/lightswitch2.wav", 40, 150)
-		else
+		elseif character:GetData("quests")["cwu_water"] and
+		character:GetData("cwuWater") < 3 then
+			local charID = character:GetID()
+			local questStartTime = character:GetData("quests", {})["cwu_water"]
+
+			if self.questCooldown[charID] != questStartTime then
+				character:SetData("cwuWater", character:GetData("cwuWater") + 1)
+				client:Notify("Do maszyny włożono 1 wkład z wodą.")
+				self.questCoolDown[charID] = questStartTime
+				self:ResetStock()
+			end
 			return
 		end
 
 		if (self.nextUseTime > CurTime()) then
 			return
 		end
-
-		local character = client:GetCharacter()
 
 		if (!character:IsCombine()) then
 			local itemInfo = self.Items[buttonID]

@@ -170,7 +170,7 @@ function PANEL:AddTab(id, filter)
 	panel:SetFilter(filter or {})
 
 	button.DoRightClick = function(this)
-		ix.gui.chat:OnTabRightClick(this, panel, panel:GetID())
+		ix.gui.chat:OnTabRightClick(this, panel, id)
 	end
 
 	self.tabs[id] = panel
@@ -209,14 +209,8 @@ function PANEL:RenameTab(id, newID)
 	tab:GetButton():SetText(newID)
 	tab:GetButton():SizeToContents()
 
-	tab:SetID(newID)
-
 	self.tabs[id] = nil
 	self.tabs[newID] = tab
-
-	if (id == self:GetActiveTabID()) then
-		self:SetActiveTab(newID)
-	end
 end
 
 function PANEL:SetActiveTab(id)
@@ -1081,6 +1075,13 @@ end
 
 function PANEL:Think()
 	if (!self.bActive) then
+		return
+	end
+
+	if (gui.IsGameUIVisible()) then
+		self:SetActive(false)
+		gui.HideGameUI()
+
 		return
 	end
 

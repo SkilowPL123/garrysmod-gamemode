@@ -579,7 +579,7 @@ do
 		end,
 		OnValidate = function(self, index, data, client)
 			if (index and client:HasWhitelist(index)) then
-				return true
+				return index
 			end
 
 			return false
@@ -954,11 +954,13 @@ do
 
 			for k, _ in pairs(payload) do
 				local info = ix.char.vars[k]
-
+				
 				if (!info or (!info.OnValidate and info.bNoDisplay)) then
 					payload[k] = nil
 				end
 			end
+
+
 
 			for k, v in SortedPairsByMemberValue(ix.char.vars, "index") do
 				local value = payload[k]

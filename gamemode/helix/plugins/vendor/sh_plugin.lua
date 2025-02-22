@@ -130,18 +130,6 @@ if (SERVER) then
 		return string.format("%s used the '%s' vendor.", client:Name(), arg[1])
 	end)
 
-	ix.log.AddType("vendorBuy", function(client, ...)
-		local arg = {...}
-
-		return string.format("%s purchased a '%s' from the '%s' vendor for %s.", client:Name(), arg[1], arg[2], arg[3])
-	end)
-
-	ix.log.AddType("vendorSell", function(client, ...)
-		local arg = {...}
-
-		return string.format("%s sold a '%s' to the '%s' vendor for %s.", client:Name(), arg[1], arg[2], arg[3])
-	end)
-
 	net.Receive("ixVendorClose", function(length, client)
 		local entity = client.ixVendor
 
@@ -280,6 +268,7 @@ if (SERVER) then
 		elseif (key == "model") then
 			entity:SetModel(data)
 			entity:InitPhysObj()
+			entity:PhysicsInit(SOLID_BBOX)
 			entity:SetAnim()
 		elseif (key == "useMoney") then
 			if (entity.money) then
@@ -331,10 +320,6 @@ if (SERVER) then
 			return
 		end
 
-		if (!entity:CanAccess(client)) then
-			return
-		end
-
 		local uniqueID = net.ReadString()
 		local isSellingToVendor = net.ReadBool()
 
@@ -358,11 +343,11 @@ if (SERVER) then
 
 				local invOkay = true
 
-				for k, _ in client:GetCharacter():GetInventory():Iter() do
-					if (k.uniqueID == uniqueID and k:GetID() != 0 and ix.item.instances[k:GetID()] and k:GetData("equip", false) == false) then
-						invOkay = k:Remove()
+				for _, v in pairs(client:GetCharacter():GetInventory():GetItems()) do
+					if (v.uniqueID == uniqueID and v:GetID() != 0 and ix.item.instances[v:GetID()] and v:GetData("equip", false) == false) then
+						invOkay = v:Remove()
 						found = true
-						name = L(k.name, client)
+						name = L(v.name, client)
 
 						break
 					end
@@ -377,12 +362,13 @@ if (SERVER) then
 					return client:NotifyLocalized("tellAdmin", "trd!iid")
 				end
 
-				client:GetCharacter():GiveMoney(price, price == 0)
+				client:GetCharacter():GiveMoney(price)
 				client:NotifyLocalized("businessSell", name, ix.currency.Get(price))
 				entity:TakeMoney(price)
 				entity:AddStock(uniqueID)
 
-				ix.log.Add(client, "vendorSell", name, entity:GetDisplayName(), ix.currency.Get(price))
+				PLUGIN:SaveData()
+				hook.Run("CharacterVendorTraded", client, entity, uniqueID, isSellingToVendor)
 			else
 				local stock = entity:GetStock(uniqueID)
 
@@ -394,13 +380,9 @@ if (SERVER) then
 					return client:NotifyLocalized("canNotAfford")
 				end
 
-				if !entity:CanSellToPlayer(client, uniqueID) then
-					return false
-				end
-
 				local name = L(ix.item.list[uniqueID].name, client)
 
-				client:GetCharacter():TakeMoney(price, price == 0)
+				client:GetCharacter():TakeMoney(price)
 				client:NotifyLocalized("businessPurchase", name, ix.currency.Get(price))
 
 				entity:GiveMoney(price)
@@ -415,11 +397,9 @@ if (SERVER) then
 
 				entity:TakeStock(uniqueID)
 
-				ix.log.Add(client, "vendorBuy", name, entity:GetDisplayName(), ix.currency.Get(price))
+				PLUGIN:SaveData()
+				hook.Run("CharacterVendorTraded", client, entity, uniqueID, isSellingToVendor)
 			end
-
-			PLUGIN:SaveData()
-			hook.Run("CharacterVendorTraded", client, entity, uniqueID, isSellingToVendor)
 		else
 			client:NotifyLocalized("vendorNoTrade")
 		end

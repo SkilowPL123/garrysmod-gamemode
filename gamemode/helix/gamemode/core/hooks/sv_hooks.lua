@@ -1,6 +1,4 @@
 
-util.AddNetworkString("ixPlayerDeath")
-
 function GM:PlayerInitialSpawn(client)
 	client.ixJoinTime = RealTime()
 
@@ -71,7 +69,7 @@ function GM:PlayerInitialSpawn(client)
 			client.ixLoaded = true
 			client:SetData("intro", true)
 
-			for _, v in player.Iterator() do
+			for _, v in ipairs(player.GetAll()) do
 				if (v:GetCharacter()) then
 					v:GetCharacter():Sync(client)
 				end
@@ -101,6 +99,14 @@ function GM:PlayerUse(client, entity)
 		return false
 	end
 
+	if (entity:IsDoor()) then
+		if (hook.Run("CanPlayerUseDoor", client, entity) == false) then
+			return false
+		end
+
+		hook.Run("PlayerUseDoor", client, entity)
+	end
+
 	return true
 end
 
@@ -111,22 +117,6 @@ function GM:KeyPress(client, key)
 				client:ToggleWepRaised()
 			end
 		end)
-	elseif (key == IN_USE) then
-		local data = {}
-			data.start = client:GetShootPos()
-			data.endpos = data.start + client:GetAimVector() * 96
-			data.filter = client
-		local entity = util.TraceLine(data).Entity
-
-		if (IsValid(entity) and hook.Run("PlayerUse", client, entity)) then
-			if (entity:IsDoor()) then
-				local result = hook.Run("CanPlayerUseDoor", client, entity)
-
-				if (result != false) then
-					hook.Run("PlayerUseDoor", client, entity)
-				end
-			end
-		end
 	end
 end
 
@@ -326,6 +316,12 @@ function GM:PlayerSay(client, text)
 		end
 	end
 
+	local result = hook.Run("PrePlayerSay", client, chatType, message, anonymous)
+
+	if result then
+		return ""
+	end
+
 	text = ix.chat.Send(client, chatType, message, anonymous)
 
 	if (isstring(text) and chatType != "ic") then
@@ -451,7 +447,7 @@ local function CalcPlayerCanHearPlayersVoice(listener)
 	listener.ixVoiceHear = listener.ixVoiceHear or {}
 
 	local eyePos = listener:EyePos()
-	for _, speaker in player.Iterator() do
+	for _, speaker in ipairs(player.GetAll()) do
 		local speakerEyePos = speaker:EyePos()
 		listener.ixVoiceHear[speaker] = eyePos:DistToSqr(speakerEyePos) < voiceDistance
 	end
@@ -465,7 +461,7 @@ function GM:InitializedConfig()
 end
 
 function GM:VoiceToggled(bAllowVoice)
-	for _, v in player.Iterator() do
+	for _, v in ipairs(player.GetAll()) do
 		local uniqueID = v:SteamID64() .. "ixCanHearPlayersVoice"
 
 		if (bAllowVoice) then
@@ -564,12 +560,12 @@ function GM:PostPlayerLoadout(client)
 	local character = client:GetCharacter()
 
 	if (character:GetInventory()) then
-		for k, _ in character:GetInventory():Iter() do
-			k:Call("OnLoadout", client)
+		for _, v in pairs(character:GetInventory():GetItems()) do
+			v:Call("OnLoadout", client)
 
-			if (k:GetData("equip") and k.attribBoosts) then
-				for attribKey, attribValue in pairs(k.attribBoosts) do
-					character:AddBoost(k.uniqueID, attribKey, attribValue)
+			if (v:GetData("equip") and v.attribBoosts) then
+				for attribKey, attribValue in pairs(v.attribBoosts) do
+					character:AddBoost(v.uniqueID, attribKey, attribValue)
 				end
 			end
 		end
@@ -602,9 +598,6 @@ function GM:DoPlayerDeath(client, attacker, damageinfo)
 			attacker:AddFrags(1)
 		end
 	end
-
-	net.Start("ixPlayerDeath")
-	net.Send(client)
 
 	client:SetAction("@respawning", ix.config.Get("spawnTime", 5))
 	client:SetDSP(31)
@@ -724,7 +717,7 @@ function GM:PlayerDisconnected(client)
 		return
 	end
 
-	for _, v in player.Iterator() do
+	for _, v in ipairs(player.GetAll()) do
 		if (!v.ixVoiceHear) then
 			continue
 		end
@@ -771,7 +764,7 @@ function GM:ShutDown()
 
 	hook.Run("SaveData")
 
-	for _, v in player.Iterator() do
+	for _, v in ipairs(player.GetAll()) do
 		v:SaveData()
 
 		if (v:GetCharacter()) then
@@ -823,9 +816,6 @@ function GM:PlayerCanPickupWeapon(client, weapon)
 end
 
 function GM:OnPhysgunFreeze(weapon, physObj, entity, client)
-    -- Validate the physObj, to prevent errors on entities who have no physics object
-    if (!IsValid(physObj)) then return false end
-
 	-- Object is already frozen (!?)
 	if (!physObj:IsMoveable()) then return false end
 	if (entity:GetUnFreezable()) then return false end
@@ -870,9 +860,9 @@ end
 function GM:CharacterPreSave(character)
 	local client = character:GetPlayer()
 
-	for k, _ in character:GetInventory():Iter() do
-		if (k.OnSave) then
-			k:Call("OnSave", client)
+	for _, v in pairs(character:GetInventory():GetItems()) do
+		if (v.OnSave) then
+			v:Call("OnSave", client)
 		end
 	end
 
@@ -880,7 +870,7 @@ function GM:CharacterPreSave(character)
 end
 
 timer.Create("ixLifeGuard", 1, 0, function()
-	for _, v in player.Iterator() do
+	for _, v in ipairs(player.GetAll()) do
 		if (v:GetCharacter() and v:Alive() and hook.Run("ShouldPlayerDrowned", v) != false) then
 			if (v:WaterLevel() >= 3) then
 				if (!v.drowningTime) then

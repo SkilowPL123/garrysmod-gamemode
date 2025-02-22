@@ -27,7 +27,9 @@ ix.anim.citizen_male = {
 		[ACT_MP_WALK] = {ACT_WALK, ACT_WALK_AIM_RIFLE_STIMULATED},
 		[ACT_MP_CROUCHWALK] = {ACT_WALK_CROUCH, ACT_WALK_CROUCH_AIM_RIFLE},
 		[ACT_MP_RUN] = {ACT_RUN, ACT_RUN_AIM_RIFLE_STIMULATED},
-		[ACT_LAND] = {ACT_RESET, ACT_RESET}
+		[ACT_LAND] = {ACT_RESET, ACT_RESET},
+		prone_walk = {"pwalk_all", "pwalk_all"},
+		prone_idle = {"pidle_normal", "pidle_fists_aim"},
 	},
 	pistol = {
 		[ACT_MP_STAND_IDLE] = {ACT_IDLE, ACT_RANGE_ATTACK_PISTOL},
@@ -37,7 +39,9 @@ ix.anim.citizen_male = {
 		[ACT_MP_RUN] = {ACT_RUN, ACT_RUN_AIM_RIFLE_STIMULATED},
 		[ACT_LAND] = {ACT_RESET, ACT_RESET},
 		attack = ACT_GESTURE_RANGE_ATTACK_PISTOL,
-		reload = ACT_RELOAD_PISTOL
+		reload = ACT_RELOAD_PISTOL,
+		prone_walk = {"pwalk_all", "pwalk_all"},
+		prone_idle = {"pidle_holding", "pidle_pistol_aim"},
 	},
 	smg = {
 		[ACT_MP_STAND_IDLE] = {ACT_IDLE_SMG1_RELAXED, ACT_IDLE_ANGRY_SMG1},
@@ -47,7 +51,9 @@ ix.anim.citizen_male = {
 		[ACT_MP_RUN] = {ACT_RUN_RIFLE_RELAXED, ACT_RUN_AIM_RIFLE_STIMULATED},
 		[ACT_LAND] = {ACT_RESET, ACT_RESET},
 		attack = ACT_GESTURE_RANGE_ATTACK_SMG1,
-		reload = ACT_GESTURE_RELOAD_SMG1
+		reload = ACT_GESTURE_RELOAD_SMG1,
+		prone_walk = {"pwalk_all", "pwalk_all"},
+		prone_idle = {"pidle_holding", "pidle_smg1_aim"},
 	},
 	shotgun = {
 		[ACT_MP_STAND_IDLE] = {ACT_IDLE_SHOTGUN_RELAXED, ACT_IDLE_ANGRY_SMG1},
@@ -56,7 +62,9 @@ ix.anim.citizen_male = {
 		[ACT_MP_CROUCHWALK] = {ACT_WALK_CROUCH_RIFLE, ACT_WALK_CROUCH_RIFLE},
 		[ACT_MP_RUN] = {ACT_RUN_RIFLE_RELAXED, ACT_RUN_AIM_RIFLE_STIMULATED},
 		[ACT_LAND] = {ACT_RESET, ACT_RESET},
-		attack = ACT_GESTURE_RANGE_ATTACK_SHOTGUN
+		attack = ACT_GESTURE_RANGE_ATTACK_SHOTGUN,
+		prone_walk = {"pwalk_all", "pwalk_all"},
+		prone_idle = {"pidle_holding", "pidle_shotgun_aim"},
 	},
 	grenade = {
 		[ACT_MP_STAND_IDLE] = {ACT_IDLE, ACT_IDLE_MANNEDGUN},
@@ -65,7 +73,9 @@ ix.anim.citizen_male = {
 		[ACT_MP_CROUCHWALK] = {ACT_WALK_CROUCH, ACT_WALK_CROUCH_AIM_RIFLE},
 		[ACT_MP_RUN] = {ACT_RUN, ACT_RUN_RIFLE_STIMULATED},
 		[ACT_LAND] = {ACT_RESET, ACT_RESET},
-		attack = ACT_RANGE_ATTACK_THROW
+		attack = ACT_RANGE_ATTACK_THROW,
+		prone_walk = {"pwalk_all", "pwalk_all"},
+		prone_idle = {"pidle_holding", "pidle_melee_aim"},
 	},
 	melee = {
 		[ACT_MP_STAND_IDLE] = {ACT_IDLE, ACT_IDLE_ANGRY_MELEE},
@@ -74,7 +84,9 @@ ix.anim.citizen_male = {
 		[ACT_MP_CROUCHWALK] = {ACT_WALK_CROUCH, ACT_WALK_CROUCH},
 		[ACT_MP_RUN] = {ACT_RUN, ACT_RUN},
 		[ACT_LAND] = {ACT_RESET, ACT_RESET},
-		attack = ACT_MELEE_ATTACK_SWING
+		attack = ACT_MELEE_ATTACK_SWING,
+		prone_walk = {"pwalk_all", "pwalk_all"},
+		prone_idle = {"pidle_holding", "pidle_melee_aim"},
 	},
 	glide = ACT_GLIDE,
 	vehicle = {

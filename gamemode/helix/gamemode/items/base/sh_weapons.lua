@@ -75,8 +75,8 @@ end)
 
 -- On player uneqipped the item, Removes a weapon from the player and keep the ammo in the item.
 ITEM.functions.EquipUn = { -- sorry, for name order.
-	name = "unequip",
-	tip = "unequipTip",
+	name = "Unequip",
+	tip = "equipTip",
 	icon = "icon16/cross.png",
 	OnRun = function(item)
 		item:Unequip(item.player, true)
@@ -92,7 +92,7 @@ ITEM.functions.EquipUn = { -- sorry, for name order.
 
 -- On player eqipped the item, Gives a weapon to player and load the ammo data from the item.
 ITEM.functions.Equip = {
-	name = "equip",
+	name = "Equip",
 	tip = "equipTip",
 	icon = "icon16/tick.png",
 	OnRun = function(item)
@@ -120,11 +120,13 @@ function ITEM:RemovePAC(client)
 end
 
 function ITEM:Equip(client, bNoSelect, bNoSound)
+	local items = client:GetCharacter():GetInventory():GetItems()
+
 	client.carryWeapons = client.carryWeapons or {}
 
-	for k, _ in client:GetCharacter():GetInventory():Iter() do
-		if (k.id != self.id) then
-			local itemTable = ix.item.instances[k.id]
+	for _, v in pairs(items) do
+		if (v.id != self.id) then
+			local itemTable = ix.item.instances[v.id]
 
 			if (!itemTable) then
 				client:NotifyLocalized("tellAdmin", "wid!xt")
@@ -287,13 +289,13 @@ end
 hook.Add("PlayerDeath", "ixStripClip", function(client)
 	client.carryWeapons = {}
 
-	for k, _ in client:GetCharacter():GetInventory():Iter() do
-		if (k.isWeapon and k:GetData("equip")) then
-			k:SetData("ammo", nil)
-			k:SetData("equip", nil)
+	for _, v in pairs(client:GetCharacter():GetInventory():GetItems()) do
+		if (v.isWeapon and v:GetData("equip")) then
+			v:SetData("ammo", nil)
+			v:SetData("equip", nil)
 
-			if (k.pacData) then
-				k:RemovePAC(client)
+			if (v.pacData) then
+				v:RemovePAC(client)
 			end
 		end
 	end

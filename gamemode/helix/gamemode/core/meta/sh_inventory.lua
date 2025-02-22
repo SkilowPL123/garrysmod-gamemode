@@ -6,21 +6,6 @@ Inventories are an object that contains `Item`s in a grid layout. Every `Charact
 it, which is the only inventory that is allowed to hold bags - any item that has its own inventory (i.e a suitcase). Inventories
 can be owned by a character, or it can be individually interacted with as a standalone object. For example, the container plugin
 attaches inventories to props, allowing for items to be stored outside of any character inventories and remain "in the world".
-
-
-You may be looking for the following common functions:
-
-`Add` Which adds an item to the inventory.
-
-`GetItems` Which gets all of the items inside the inventory.
-
-`GetItemByID` Which gets an item in the inventory by it's item ID.
-
-`GetItemAt` Which gets an item in the inventory by it's x and y
-
-`GetID` Which gets the inventory's ID.
-
-`HasItem` Which checks if the inventory has an item.
 ]]
 -- @classmod Inventory
 
@@ -38,7 +23,7 @@ META.receivers = META.receivers or {}
 -- @usage print(ix.item.inventories[1])
 -- > "inventory[1]"
 function META:__tostring()
-	return "inventory["..(self.id or 0).."]"
+	return "inventory[" .. (self.id or 0) .. "]"
 end
 
 --- Initializes the inventory with the provided arguments.
@@ -65,8 +50,8 @@ function META:GetID()
 end
 
 --- Sets the grid size of this inventory.
--- @realm shared
 -- @internal
+-- @realm shared
 -- @number width New width of inventory
 -- @number height New height of inventory
 function META:SetSize(width, height)
@@ -95,27 +80,26 @@ function META:Print(printPos)
 	end
 end
 
-
 --- Searches the inventory to find any stacked items.
 -- A common problem with developing, is that items will sometimes error out, or get corrupt.
 -- Sometimes, the server knows things you don't while developing live
 -- This function can be helpful for getting rid of those pesky errors.
 -- @realm shared
 function META:FindError()
-	for k, _ in self:Iter() do
-		if (k.width == 1 and k.height == 1) then
+	for _, v in pairs(self:GetItems()) do
+		if (v.width == 1 and v.height == 1) then
 			continue
 		end
 
-		print("Finding error: " .. k.name)
-		print("Item Position: " .. k.gridX, k.gridY)
+		print("Finding error: " .. v.name)
+		print("Item Position: " .. v.gridX, v.gridY)
 
-		for x = k.gridX, k.gridX + k.width - 1 do
-			for y = k.gridY, k.gridY + k.height - 1 do
+		for x = v.gridX, v.gridX + v.width - 1 do
+			for y = v.gridY, v.gridY + v.height - 1 do
 				local item = self.slots[x][y]
 
-				if (item and item.id != k.id) then
-					print("Error Found: ".. item.name)
+				if (item and item.id != v.id) then
+					print("Error Found: " .. item.name)
 				end
 			end
 		end
@@ -150,7 +134,7 @@ end
 -- @treturn[1] Player Owning player
 -- @treturn[2] nil If no connected player owns this inventory
 function META:GetOwner()
-	for _, v in player.Iterator() do
+	for _, v in ipairs(player.GetAll()) do
 		if (v:GetCharacter() and v:GetCharacter().id == self.owner) then
 			return v
 		end
@@ -170,7 +154,7 @@ function META:SetOwner(owner, fullUpdate)
 
 	if (SERVER) then
 		if (fullUpdate) then
-			for _, v in player.Iterator() do
+			for _, v in ipairs(player.GetAll()) do
 				if (v:GetNetVar("char") == owner) then
 					self:Sync(v, true)
 
@@ -555,31 +539,6 @@ function META:GetItems(onlyMain)
 	return items
 end
 
---- Returns an iterator that returns all contained items, a better way to iterate items than `pairs(inventory:GetItems())`
--- @realm shared
--- @treturn function iterator
-function META:Iter()
-	local x, y, item = 1, 1
-
-	return function()
-		item = nil
-
-		repeat
-			if (x > self.w) then
-				x, y = 1, y + 1
-				if (y > self.h) then return nil end
-			end
-
-			item = self.slots[x] and self.slots[x][y]
-			x = x + 1
-		until item
-
-		if (item) then
-			return item, x, y
-		end
-	end
-end
-
 -- This function may pretty heavy.
 --- Returns a table of all the items that an `Inventory` has.
 -- @realm shared
@@ -587,6 +546,7 @@ end
 -- @treturn table The items this `Inventory` has.
 function META:GetBags()
 	local invs = {}
+
 	for _, v in pairs(self.slots) do
 		for _, v2 in pairs(v) do
 			if (istable(v2) and v2.data) then
@@ -619,10 +579,12 @@ end
 -- 	-- do something with the item table
 -- end
 function META:HasItem(targetID, data)
-	for k, _ in self:Iter() do
-		if (k.uniqueID == targetID) then
+	local items = self:GetItems()
+
+	for _, v in pairs(items) do
+		if (v.uniqueID == targetID) then
 			if (data) then
-				local itemData = k.data
+				local itemData = v.data
 				local bFound = true
 
 				for dataKey, dataVal in pairs(data) do
@@ -637,7 +599,7 @@ function META:HasItem(targetID, data)
 				end
 			end
 
-			return k
+			return v
 		end
 	end
 
@@ -658,12 +620,13 @@ end
 -- if not Entity(1):GetCharacter():GetInventory():HasItems(itemFilter) then return end
 -- -- Filters out if this player has both a water, and a sparkling water.
 function META:HasItems(targetIDs)
+	local items = self:GetItems()
 	local count = #targetIDs -- assuming array
 	targetIDs = table.Copy(targetIDs)
 
-	for item, _ in self:Iter() do
+	for _, v in pairs(items) do
 		for k, targetID in ipairs(targetIDs) do
-			if (item.uniqueID == targetID) then
+			if (v.uniqueID == targetID) then
 				table.remove(targetIDs, k)
 				count = count - 1
 
@@ -692,10 +655,12 @@ end
 -- end
 -- -- Notifies the player that they should get some more guns.
 function META:HasItemOfBase(baseID, data)
-	for k, _ in self:Iter() do
-		if (k.base == baseID) then
+	local items = self:GetItems()
+
+	for _, v in pairs(items) do
+		if (v.base == baseID) then
 			if (data) then
-				local itemData = k.data
+				local itemData = v.data
 				local bFound = true
 
 				for dataKey, dataVal in pairs(data) do
@@ -710,7 +675,7 @@ function META:HasItemOfBase(baseID, data)
 				end
 			end
 
-			return k
+			return v
 		end
 	end
 
@@ -931,17 +896,16 @@ if (SERVER) then
 		end
 	end
 
-	--- Syncs the `Inventory` to the receiver.
-	-- This will call Item.OnSendData on every item in the `Inventory`.
-	-- @realm server
-	-- @player receiver The player to
-	function META:Sync(receiver)
+	function META:Sync(receiver, fullUpdate)
 		local slots = {}
 
 		for x, items in pairs(self.slots) do
 			for y, item in pairs(items) do
 				if (istable(item) and item.gridX == x and item.gridY == y) then
-					slots[#slots + 1] = {x, y, item.uniqueID, item.id, item.data}
+					local data = table.Copy(item.data)
+					data["T"] = nil
+
+					slots[#slots + 1] = {x, y, item.uniqueID, item.id, data}
 				end
 			end
 		end
@@ -955,8 +919,8 @@ if (SERVER) then
 			net.WriteTable(self.vars or {})
 		net.Send(receiver)
 
-		for k, _ in self:Iter() do
-			k:Call("OnSendData", receiver)
+		for _, v in pairs(self:GetItems()) do
+			v:Call("OnSendData", receiver)
 		end
 	end
 end

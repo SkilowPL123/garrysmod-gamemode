@@ -56,9 +56,8 @@ end
 
 function PANEL:Think()
 	local x, _ = self:GetPos()
-	local y = 4 + ix.gui.bars:GetTall()
 
-	self:SetPos(x, y)
+	self:SetPos(x, 160)
 end
 
 function PANEL:Paint(width, height)

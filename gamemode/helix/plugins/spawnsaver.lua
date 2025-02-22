@@ -10,6 +10,13 @@ function PLUGIN:CharacterPreSave(character)
 	-- Check to see if we can get the player's position.
 	if (IsValid(client)) then
 		local position, eyeAngles = client:GetPos(), client:EyeAngles()
+
+		if client:GetNetVar("forcedSequence") then
+			if isvector(client.latestSitPos) and (client.latestCharKey or 0) == character:GetID() then
+				position = client.latestSitPos
+			end
+		end
+
 		-- Use pre-observer position to prevent spawning in the air.
 		if (client.ixObsData) then
 			position, eyeAngles = client.ixObsData[1], client.ixObsData[2]

@@ -52,8 +52,6 @@ do
 
 			if (#receivers > 0) then
 				net.Start("ixDoorMenu")
-					net.WriteEntity(self)
-					net.WriteTable({})
 				net.Send(receivers)
 			end
 

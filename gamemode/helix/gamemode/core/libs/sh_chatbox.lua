@@ -318,7 +318,7 @@ if (SERVER) then
 			if (class.CanHear and !receivers) then
 				receivers = {}
 
-				for _, v in player.Iterator() do
+				for _, v in ipairs(player.GetAll()) do
 					if (v:GetCharacter() and class:CanHear(speaker, v, data) != false) then
 						receivers[#receivers + 1] = v
 					end
@@ -332,9 +332,6 @@ if (SERVER) then
 			-- Format the message if needed before we run the hook.
 			local rawText = text
 			local maxLength = ix.config.Get("chatMax")
-
-			-- Trim the text and remove extra spaces.
-			text = string.gsub(text, "%s+", " ")
 
 			if (text:utf8len() > maxLength) then
 				text = text:utf8sub(0, maxLength)
@@ -362,9 +359,6 @@ else
 		local class = ix.chat.classes[chatType]
 
 		if (class) then
-			-- Trim the text and remove extra spaces.
-			text = string.gsub(text, "%s+", " ")
-
 			-- luacheck: globals CHAT_CLASS
 			CHAT_CLASS = class
 				class:OnChatAdd(speaker, text, anonymous, data)

@@ -5,7 +5,7 @@ end
 
 function GM:ScoreboardShow()
 	if (LocalPlayer():GetCharacter()) then
-		vgui.Create("ixMenu")
+		vgui.Create("cellar.tab")
 	end
 end
 
@@ -419,13 +419,13 @@ function GM:NetworkEntityCreated(entity)
 	end
 end
 
-local vignette = ix.util.GetMaterial("helix/gui/vignette.png")
+local vignette = ix.util.GetMaterial("helix/gui/vignette.png") or ix.util.GetMaterial("helix/gui/vignette.png")
 local vignetteAlphaGoal = 0
 local vignetteAlphaDelta = 0
 local vignetteTraceHeight = Vector(0, 0, 768)
 local blurGoal = 0
 local blurDelta = 0
-local hasVignetteMaterial = !vignette:IsError()
+local hasVignetteMaterial = vignette != "___error"
 
 timer.Create("ixVignetteChecker", 1, 0, function()
 	local client = LocalPlayer()
@@ -439,7 +439,7 @@ timer.Create("ixVignetteChecker", 1, 0, function()
 
 		-- this timer could run before InitPostEntity is called, so we have to check for the validity of the trace table
 		if (trace and trace.Hit) then
-			vignetteAlphaGoal = 80
+			vignetteAlphaGoal = 150
 		else
 			vignetteAlphaGoal = 0
 		end
@@ -585,40 +585,6 @@ function GM:HUDPaintBackground()
 
 	self.BaseClass:PaintWorldTips()
 
-	local weapon = client:GetActiveWeapon()
-
-	if (IsValid(weapon) and hook.Run("CanDrawAmmoHUD", weapon) != false and weapon.DrawAmmo != false) then
-		local clip = weapon:Clip1()
-		local clipMax = weapon:GetMaxClip1()
-		local count = client:GetAmmoCount(weapon:GetPrimaryAmmoType())
-		local secondary = client:GetAmmoCount(weapon:GetSecondaryAmmoType())
-		local x, y = scrW - 80, scrH - 80
-
-		if (secondary > 0) then
-			ix.util.DrawBlurAt(x, y, 64, 64)
-
-			surface.SetDrawColor(255, 255, 255, 5)
-			surface.DrawRect(x, y, 64, 64)
-			surface.SetDrawColor(255, 255, 255, 3)
-			surface.DrawOutlinedRect(x, y, 64, 64)
-
-			ix.util.DrawText(secondary, x + 32, y + 32, nil, 1, 1, "ixBigFont")
-		end
-
-		if (weapon:GetClass() != "weapon_slam" and clip > 0 or count > 0) then
-			x = x - (secondary > 0 and 144 or 64)
-
-			ix.util.DrawBlurAt(x, y, 128, 64)
-
-			surface.SetDrawColor(255, 255, 255, 5)
-			surface.DrawRect(x, y, 128, 64)
-			surface.SetDrawColor(255, 255, 255, 3)
-			surface.DrawOutlinedRect(x, y, 128, 64)
-
-			ix.util.DrawText((clip == -1 or clipMax == -1) and count or clip.."/"..count, x + 64, y + 32, nil, 1, 1, "ixBigFont")
-		end
-	end
-
 	if (client:GetLocalVar("restricted") and !client:GetLocalVar("restrictNoMsg")) then
 		ix.util.DrawText(L"restricted", scrW * 0.5, scrH * 0.33, nil, 1, 1, "ixBigFont")
 	end
@@ -660,7 +626,7 @@ function GM:PostDrawHUD()
 	cam.Start2D()
 		ix.hud.DrawAll()
 
-		if (!IsValid(ix.gui.deathScreen) and (!IsValid(ix.gui.characterMenu) or ix.gui.characterMenu:IsClosing())) then
+		if (!IsValid(ix.gui.characterMenu) or ix.gui.characterMenu:IsClosing()) then
 			ix.bar.DrawAction()
 		end
 	cam.End2D()
@@ -692,7 +658,8 @@ function GM:GetInjuredText(client)
 end
 
 function GM:PopulateImportantCharacterInfo(client, character, container)
-	local color = team.GetColor(client:Team())
+	--local color = team.GetColor(client:Team()) -- СТАРАЯ ПЕРЕМЕННАЯ 
+	local color = hook.Run("IsPlayerRecognized", client) and team.GetColor(client:Team()) or ix.config.Get("color") -- ПОЧИНЕННАЯ НОВАЯ ПЕРЕМЕННАЯ
 	container:SetArrowColor(color)
 
 	-- name
@@ -970,12 +937,6 @@ end
 
 function GM:HUDDrawTargetID()
 	return false
-end
-
-function GM:BuildBusinessMenu()
-	if (!ix.config.Get("allowBusiness", true)) then
-		return false
-	end
 end
 
 gameevent.Listen("player_spawn")

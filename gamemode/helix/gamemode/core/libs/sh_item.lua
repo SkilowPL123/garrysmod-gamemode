@@ -129,7 +129,7 @@ function ix.item.Register(uniqueID, baseID, isBaseItem, path, luaGenerated)
 		ITEM = (isBaseItem and ix.item.base or ix.item.list)[uniqueID] or setmetatable({}, meta)
 			ITEM.uniqueID = uniqueID
 			ITEM.base = baseID or ITEM.base
-			ITEM.isBase = isBaseItem or false
+			ITEM.isBase = isBaseItem
 			ITEM.hooks = ITEM.hooks or {}
 			ITEM.postHooks = ITEM.postHooks or {}
 			ITEM.functions = ITEM.functions or {}
@@ -241,7 +241,7 @@ function ix.item.Register(uniqueID, baseID, isBaseItem, path, luaGenerated)
 				-- we don't know which item was actually edited, so we'll refresh all of them
 				for _, v in pairs(ix.item.instances) do
 					if (v.uniqueID == uniqueID) then
-						ix.util.MetatableSafeTableMerge(v, ITEM)
+						table.Merge(v, ITEM)
 					end
 				end
 			end
@@ -711,7 +711,8 @@ do
 					inventory:Sync(client)
 				end
 
-				if ((inventory.owner and inventory.owner == character:GetID()) or inventory:OnCheckAccess(client)) then
+				if ((!inventory.owner or (inventory.owner and inventory.owner == character:GetID())) or
+					inventory:OnCheckAccess(client)) then
 					local item = inventory:GetItemAt(oldX, oldY)
 
 					if (item) then

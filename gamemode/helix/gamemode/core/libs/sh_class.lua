@@ -124,7 +124,7 @@ end
 function ix.class.GetPlayers(class)
 	local players = {}
 
-	for _, v in player.Iterator() do
+	for _, v in ipairs(player.GetAll()) do
 		local char = v:GetCharacter()
 
 		if (char and char:GetClass() == class) then
@@ -176,12 +176,6 @@ if (SERVER) then
 
 				break
 			end
-		end
-
-		if (!goClass) then
-			ErrorNoHaltWithStack("[Helix] No default class set for faction '" .. team.GetName(client:Team()) .. "'")
-
-			return
 		end
 
 		self:JoinClass(goClass)

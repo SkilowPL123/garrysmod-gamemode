@@ -305,10 +305,10 @@ function ITEM:GetOwner()
 
 	local id = self:GetID()
 
-	for _, v in player.Iterator() do
+	for _, v in ipairs(player.GetAll()) do
 		local character = v:GetCharacter()
 
-		if (character and character:GetInventory() and character:GetInventory():GetItemByID(id)) then
+		if (character and character:GetInventory():GetItemByID(id)) then
 			return v
 		end
 	end
@@ -417,9 +417,10 @@ end
 -- @treturn bool Whether the item was successfully deleted or not
 function ITEM:Remove(bNoReplication, bNoDelete)
 	local inv = ix.item.inventories[self.invID]
-	local bFailed = false
 
 	if (self.invID > 0 and inv) then
+		local failed = false
+
 		for x = self.gridX, self.gridX + (self.width - 1) do
 			if (inv.slots[x]) then
 				for y = self.gridY, self.gridY + (self.height - 1) do
@@ -428,31 +429,31 @@ function ITEM:Remove(bNoReplication, bNoDelete)
 					if (item and item.id == self.id) then
 						inv.slots[x][y] = nil
 					else
-						bFailed = true
+						failed = true
 					end
 				end
-			else
-				bFailed = true
 			end
 		end
 
-		if (bFailed) then
-			local items = {}
-			for _, v in pairs(ix.item.instances) do
-				if (v.invID == self.invID and v.id != self.id) then
-					items[#items + 1] = v
-				end
-			end
+		if (failed) then
+			local items = inv:GetItems()
 
 			inv.slots = {}
-			for _, v in ipairs(items) do
-				for x = v.gridX, v.gridX + (v.width - 1) do
-					for y = v.gridY, v.gridY + (v.height - 1) do
-						inv.slots[x] = inv.slots[x] or {}
-						inv.slots[x][y] = v
+			for _, v in pairs(items) do
+				if (v.invID == inv:GetID()) then
+					for x = self.gridX, self.gridX + (self.width - 1) do
+						for y = self.gridY, self.gridY + (self.height - 1) do
+							inv.slots[x][y] = v.id
+						end
 					end
 				end
 			end
+
+			if (IsValid(inv.owner) and inv.owner:IsPlayer()) then
+				inv:Sync(inv.owner, true)
+			end
+
+			return false
 		end
 	else
 		-- @todo definition probably isn't needed
@@ -473,14 +474,10 @@ function ITEM:Remove(bNoReplication, bNoDelete)
 		local receivers = inv.GetReceivers and inv:GetReceivers()
 
 		if (self.invID != 0 and istable(receivers)) then
-			if (bFailed) then
-				inv:Sync(receivers)
-			else
-				net.Start("ixInventoryRemove")
-					net.WriteUInt(self.id, 32)
-					net.WriteUInt(self.invID, 32)
-				net.Send(receivers)
-			end
+			net.Start("ixInventoryRemove")
+				net.WriteUInt(self.id, 32)
+				net.WriteUInt(self.invID, 32)
+			net.Send(receivers)
 		end
 
 		if (!bNoDelete) then

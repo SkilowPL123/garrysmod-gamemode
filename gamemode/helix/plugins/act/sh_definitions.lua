@@ -65,7 +65,9 @@ function PLUGIN:SetupActs()
 	})
 
 	ix.act.Register("Stand", "metrocop", {
-		sequence = "plazathreat2"
+		sequence = "plazathreat2",
+		untimed = true,
+		idle = true
 	})
 
 	-- cheer

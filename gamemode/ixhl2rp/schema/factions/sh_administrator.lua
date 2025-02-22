@@ -1,26 +1,48 @@
-
-FACTION.name = "Administrator"
-FACTION.description = "A human Administrator advised by the Universal Union."
+FACTION.name = "Городской Администратор"
+FACTION.description = "Человеческое представительство Альянса на нашей планете."
 FACTION.color = Color(255, 200, 100, 255)
-FACTION.pay = 50
+FACTION.bHumanVoices = true
+FACTION.bCanUseRations = true
+FACTION.bAllowDatafile = true
 FACTION.models = {
-	"models/humans/group17/female_01.mdl",
-	"models/humans/group17/female_02.mdl",
-	"models/humans/group17/female_03.mdl",
-	"models/humans/group17/female_04.mdl",
-	"models/humans/group17/female_06.mdl",
-	"models/humans/group17/female_07.mdl",
-	"models/humans/group17/male_01.mdl",
-	"models/humans/group17/male_02.mdl",
-	"models/humans/group17/male_03.mdl",
-	"models/humans/group17/male_04.mdl",
-	"models/humans/group17/male_05.mdl",
-	"models/humans/group17/male_06.mdl",
-	"models/humans/group17/male_07.mdl",
-	"models/humans/group17/male_08.mdl",
-	"models/humans/group17/male_09.mdl"
+	[1] = {"models/cellar/characters/gurevich.mdl"},
+	[2] = {"models/group17/female_01.mdl"}
 }
+
 FACTION.isDefault = false
 FACTION.isGloballyRecognized = true
+FACTION.scoreboardClass = "scCityAdm"
 
-FACTION_ADMIN = FACTION.index
+function FACTION:GetModels(client, gender)
+	return self.models[gender]
+end
+
+function FACTION:GetRationType(character)
+    return Schema:GetCitizenRationTypes(character)
+end
+
+function FACTION:OnCharacterCreated(client, character)
+    character:CreateIDCard("card_ca_head")
+end
+
+function FACTION:OnCharacterCreated(client, character)
+
+end
+
+FACTION.npcRelations = {
+    ["npc_turret_floor"] = D_NU,
+    ["npc_combine_camera"] = D_NU,
+    ["npc_turret_ceiling"] = D_NU,
+    ["npc_rollermine"] = D_NU,
+    ["npc_helicopter"] = D_NU,
+    ["npc_combinegunship"] = D_NU,
+    ["npc_strider"] = D_NU,
+    ["npc_metropolice"] = D_LI,
+    ["npc_hunter"] = D_NU,
+	["npc_combine_s"] = D_NU,
+	["CombinePrison"] = D_NU,
+	["CombineElite"] = D_NU,
+    ["npc_manhack"] = D_LI
+}
+
+FACTION_ADMIN_HEAD = FACTION.index

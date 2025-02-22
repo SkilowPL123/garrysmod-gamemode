@@ -1,41 +1,29 @@
 
 function Schema:PopulateCharacterInfo(client, character, tooltip)
 	if (client:IsRestricted()) then
-		local panel = tooltip:AddRowAfter("name", "ziptie")
+		local panel = tooltip:AddRowAfter("rarity", "ziptie")
 		panel:SetBackgroundColor(derma.GetColor("Warning", tooltip))
 		panel:SetText(L("tiedUp"))
 		panel:SizeToContents()
 	elseif (client:GetNetVar("tying")) then
-		local panel = tooltip:AddRowAfter("name", "ziptie")
+		local panel = tooltip:AddRowAfter("rarity", "ziptie")
 		panel:SetBackgroundColor(derma.GetColor("Warning", tooltip))
 		panel:SetText(L("beingTied"))
 		panel:SizeToContents()
 	elseif (client:GetNetVar("untying")) then
-		local panel = tooltip:AddRowAfter("name", "ziptie")
+		local panel = tooltip:AddRowAfter("rarity", "ziptie")
 		panel:SetBackgroundColor(derma.GetColor("Warning", tooltip))
 		panel:SetText(L("beingUntied"))
 		panel:SizeToContents()
 	end
 end
 
-local COMMAND_PREFIX = "/"
-
 function Schema:ChatTextChanged(text)
-	if (LocalPlayer():IsCombine()) then
-		local key = nil
+	if (LocalPlayer():IsCombine()) then -- and (text:sub(1, 1):find("%w") or text:find("/%a+%s"))) then
+		local chatType = ix.chat.Parse(LocalPlayer(), text, true)
 
-		if (text == COMMAND_PREFIX .. "radio ") then
-			key = "r"
-		elseif (text == COMMAND_PREFIX .. "w ") then
-			key = "w"
-		elseif (text == COMMAND_PREFIX .. "y ") then
-			key = "y"
-		elseif (text:sub(1, 1):match("%w")) then
-			key = "t"
-		end
-
-		if (key) then
-			netstream.Start("PlayerChatTextChanged", key)
+		if (self:ShouldPlayTypingBeep(LocalPlayer(), chatType)) then
+			netstream.Start("PlayerChatTextChanged", chatType)
 		end
 	end
 end
@@ -45,14 +33,50 @@ function Schema:FinishChat()
 end
 
 function Schema:CanPlayerJoinClass(client, class, info)
-	return false
+	return client:Team() == FACTION_ZOMBIE
+end
+
+function Schema:GetPlayerEntityMenu(client, options)
+	local callingPlayer = LocalPlayer()
+
+	if (!callingPlayer:IsRestricted() and client:IsRestricted() and !client:GetNetVar("untying")) then
+		options["Untie"] = true
+		options["Search"] = true
+	elseif (!callingPlayer:IsRestricted() and !client:IsRestricted() and !client:GetNetVar("tying") and
+		callingPlayer:GetCharacter():GetInventory():HasItem("zip_tie")) then
+			options["Ziptie"] = true
+	elseif (!callingPlayer:IsRestricted() and client:GetNetVar("crit")) then
+		options["Search"] = true
+	end
 end
 
 function Schema:CharacterLoaded(character)
 	if (character:IsCombine()) then
 		vgui.Create("ixCombineDisplay")
+
+		timer.Create("ixRandomDisplayLines", 12, 0, function()
+			if (IsValid(client) and client:IsCombine()) then
+				local text = self.randomDisplayLines[math.random(1, #self.randomDisplayLines)]
+
+				if (istable(text)) then
+					text = text[2](text[1]) or ""
+				end
+
+				if (text and self.LastRandomDisplayLine != text) then
+					self:AddCombineDisplayMessage(text)
+
+					self.LastRandomDisplayLine = text
+				end
+			else
+				self.LastRandomDisplayLine = nil
+
+				timer.Remove("ixRandomDisplayLines")
+			end
+		end)
 	elseif (IsValid(ix.gui.combine)) then
 		ix.gui.combine:Remove()
+
+		timer.Remove("ixRandomDisplayLines")
 	end
 end
 
@@ -60,44 +84,28 @@ function Schema:PlayerFootstep(client, position, foot, soundName, volume)
 	return true
 end
 
-local COLOR_BLACK_WHITE = {
+local colorModify = {
 	["$pp_colour_addr"] = 0,
 	["$pp_colour_addg"] = 0,
 	["$pp_colour_addb"] = 0,
-	["$pp_colour_brightness"] = 0,
-	["$pp_colour_contrast"] = 1.5,
-	["$pp_colour_colour"] = 0,
+	["$pp_colour_brightness"] = -0.015,
+	["$pp_colour_contrast"] = 1.2,
+	["$pp_colour_colour"] = 0.5,
 	["$pp_colour_mulr"] = 0,
 	["$pp_colour_mulg"] = 0,
 	["$pp_colour_mulb"] = 0
 }
 
 local combineOverlay = ix.util.GetMaterial("effects/combine_binocoverlay")
-local scannerFirstPerson = false
 
 function Schema:RenderScreenspaceEffects()
-	local colorModify = {}
-	colorModify["$pp_colour_colour"] = 0.77
-
-	if (system.IsWindows()) then
-		colorModify["$pp_colour_brightness"] = -0.02
-		colorModify["$pp_colour_contrast"] = 1.2
-	else
-		colorModify["$pp_colour_brightness"] = 0
-		colorModify["$pp_colour_contrast"] = 1
-	end
-
-	if (scannerFirstPerson) then
-		COLOR_BLACK_WHITE["$pp_colour_brightness"] = 0.05 + math.sin(RealTime() * 10) * 0.01
-		colorModify = COLOR_BLACK_WHITE
-	end
-
 	DrawColorModify(colorModify)
+	local char = LocalPlayer():GetCharacter()
 
-	if (LocalPlayer():IsCombine()) then
+	if (char and char:HasVisor() and !char:IsOTA()) then
 		render.UpdateScreenEffectTexture()
 
-		combineOverlay:SetFloat("$alpha", 0.5)
+		combineOverlay:SetFloat("$alpha", 0.25)
 		combineOverlay:SetInt("$ignorez", 1)
 
 		render.SetMaterial(combineOverlay)
@@ -105,55 +113,34 @@ function Schema:RenderScreenspaceEffects()
 	end
 end
 
-function Schema:PreDrawOpaqueRenderables()
-	local viewEntity = LocalPlayer():GetViewEntity()
+function Schema:ShouldShowPlayerOnScoreboard(client)
+	local clientFaction = LocalPlayer():Team()
+	local playerFaction = client:Team()
 
-	if (IsValid(viewEntity) and viewEntity:GetClass():find("scanner")) then
-		self.LastViewEntity = viewEntity
-		self.LastViewEntity:SetNoDraw(true)
-
-		scannerFirstPerson = true
+	if (playerFaction == clientFaction) then
 		return
 	end
-
-	if (self.LastViewEntity != viewEntity) then
-		if (IsValid(self.LastViewEntity)) then
-			self.LastViewEntity:SetNoDraw(false)
-		end
-
-		self.LastViewEntity = nil
-		scannerFirstPerson = false
-	end
 end
 
-function Schema:ShouldDrawCrosshair()
-	if (scannerFirstPerson) then
-		return false
+function Schema:CanDrawAmmoHUD(weapon) end
+
+function Schema:IsPlayerRecognized(target)
+	if !IsValid(target) then
+		return
 	end
+	-- target:IsCombine()
+	if target:IsCityAdmin() then
+		return true
+	end
+
+	--if target:GetNetVar("IsConcealed", false) then
+	--	return false
+	--end
 end
 
-function Schema:AdjustMouseSensitivity()
-	if (scannerFirstPerson) then
-		return 0.3
-	end
-end
-
--- creates labels in the status screen
-function Schema:CreateCharacterInfo(panel)
-	if (LocalPlayer():Team() == FACTION_CITIZEN) then
-		panel.cid = panel:Add("ixListRow")
-		panel.cid:SetList(panel.list)
-		panel.cid:Dock(TOP)
-		panel.cid:DockMargin(0, 0, 0, 8)
-	end
-end
-
--- populates labels in the status screen
-function Schema:UpdateCharacterInfo(panel)
-	if (LocalPlayer():Team() == FACTION_CITIZEN) then
-		panel.cid:SetLabelText(L("citizenid"))
-		panel.cid:SetText(string.format("##%s", LocalPlayer():GetCharacter():GetData("cid") or "UNKNOWN"))
-		panel.cid:SizeToContents()
+function Schema:IsRecognizedChatType(chatType)
+	if (chatType == "mec" or chatType == "mel" or chatType == "med") then
+		return true
 	end
 end
 
@@ -170,6 +157,24 @@ function Schema:BuildBusinessMenu(panel)
 
 	return bHasItems
 end
+
+netstream.Hook("CombineDisplayMessage", function(text, color, arguments)
+	if (IsValid(ix.gui.combine)) then
+		ix.gui.combine:AddLine(text, color, nil, unpack(arguments))
+	end
+end)
+
+netstream.Hook("PlaySound", function(sound)
+	surface.PlaySound(sound)
+end)
+
+netstream.Hook("ixEmitQueuedSounds", function(sounds, delay, spacing, volume, pitch)
+	ix.util.EmitQueuedSounds(LocalPlayer(), sounds, delay, spacing, volume, pitch)
+end)
+
+netstream.Hook("ixPlayLocalSound", function(path, position, level, pitch, volume)
+	sound.Play(path, position, level, pitch, volume)
+end)
 
 function Schema:PopulateHelpMenu(tabs)
 	tabs["voices"] = function(container)
@@ -248,28 +253,12 @@ function Schema:PopulateHelpMenu(tabs)
 	end
 end
 
-netstream.Hook("CombineDisplayMessage", function(text, color, arguments)
-	if (IsValid(ix.gui.combine)) then
-		ix.gui.combine:AddLine(text, color, nil, unpack(arguments))
+function Schema:ShouldDisableThirdperson(client)
+	if (client:IsWepRaised()) then
+		return true    
 	end
-end)
+end
 
-netstream.Hook("PlaySound", function(sound)
-	surface.PlaySound(sound)
-end)
-
-netstream.Hook("Frequency", function(oldFrequency)
-	Derma_StringRequest("Frequency", "What would you like to set the frequency to?", oldFrequency, function(text)
-		ix.command.Send("SetFreq", text)
-	end)
-end)
-
-netstream.Hook("ViewData", function(target, cid, data)
-	Schema:AddCombineDisplayMessage("@cViewData")
-	vgui.Create("ixViewData"):Populate(target, cid, data)
-end)
-
-netstream.Hook("ViewObjectives", function(data)
-	Schema:AddCombineDisplayMessage("@cViewObjectives")
-	vgui.Create("ixViewObjectives"):Populate(data)
-end)
+function Schema:InitPostEntity()
+	RunConsoleCommand("r_eyemove", "0")
+end

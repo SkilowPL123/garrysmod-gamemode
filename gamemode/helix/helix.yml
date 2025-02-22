@@ -1,0 +1,8 @@
+
+database:
+  adapter: "mysqloo"
+  hostname: "127.0.0.1"
+  username: "skilow"
+  password: "1234"
+  database: "piwnicagranie_hl2rp"
+  port: 3306

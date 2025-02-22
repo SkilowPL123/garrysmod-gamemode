@@ -1,53 +1,82 @@
-
-FACTION.name = "Metropolice Force"
-FACTION.description = "A metropolice unit working as Civil Protection."
+FACTION.name = "Combine Civil Authority"
+FACTION.description = ""
 FACTION.color = Color(50, 100, 150)
-FACTION.pay = 10
-FACTION.models = {"models/police.mdl"}
-FACTION.weapons = {"ix_stunstick"}
 FACTION.isDefault = false
-FACTION.isGloballyRecognized = true
+FACTION.bCanUseRations = true
+FACTION.bAllowDatafile = true
+FACTION.isLocallyRecognized = true
+FACTION.canSeeWaypoints = true
+
+FACTION.scoreboardClass = "scMPF"
+
+FACTION.models = {
+	[1] = {
+		"models/willardnetworks/citizens/male/c3_male_01.mdl",
+		"models/willardnetworks/citizens/male/c3_male_02.mdl",
+		"models/willardnetworks/citizens/male/c3_male_03.mdl",
+		"models/willardnetworks/citizens/male/c3_male_04.mdl",
+		"models/willardnetworks/citizens/male/c3_male_05.mdl",
+		"models/willardnetworks/citizens/male/c3_male_06.mdl",
+		"models/willardnetworks/citizens/male/c3_male_07.mdl",
+		"models/willardnetworks/citizens/male/c3_male_08.mdl",
+		"models/willardnetworks/citizens/male/c3_male_09.mdl",
+		"models/willardnetworks/citizens/male/c3_male_10.mdl",
+	},
+	[2] = {
+		"models/willardnetworks/citizens/female/c3_female_01.mdl",
+		"models/willardnetworks/citizens/female/c3_female_02.mdl",
+		"models/willardnetworks/citizens/female/c3_female_03.mdl",
+		"models/willardnetworks/citizens/female/c3_female_04.mdl",
+		"models/willardnetworks/citizens/female/c3_female_05.mdl",
+		"models/willardnetworks/citizens/female/c3_female_06.mdl",
+	},
+}
+
 FACTION.runSounds = {[0] = "NPC_MetroPolice.RunFootstepLeft", [1] = "NPC_MetroPolice.RunFootstepRight"}
+FACTION.typingBeeps = {"MPF.RadioOn", "MPF.RadioOff"}
+
+FACTION.npcRelations = {
+	["npc_turret_floor"] = D_NU,
+	["npc_combine_camera"] = D_NU,
+	["npc_turret_ceiling"] = D_NU,
+	["npc_rollermine"] = D_NU,
+	["npc_helicopter"] = D_NU,
+	["npc_combinegunship"] = D_NU,
+	["npc_strider"] = D_NU,
+	["npc_metropolice"] = D_LI,
+	["npc_hunter"] = D_NU,
+	["npc_manhack"] = D_LI
+}
 
 function FACTION:OnCharacterCreated(client, character)
-	local inventory = character:GetInventory()
-
-	inventory:Add("pistol", 1)
-	inventory:Add("pistolammo", 2)
+	character:CreateIDCard("card_mpf")
 end
+
+function FACTION:GetModels(client, gender)
+	return self.models[gender]
+end
+
+FACTION.GetDefaultName = nil
+
 
 function FACTION:GetDefaultName(client)
-	return "MPF-RCT." .. Schema:ZeroNumber(math.random(1, 99999), 5), true
+	return "CCA:c03." .. Schema:ZeroNumber(math.random(1, 9999), 4), true
 end
 
-function FACTION:OnTransferred(character)
-	character:SetName(self:GetDefaultName())
+function FACTION:GetRationType(character)
+	return "ration_tier_3"
+end
+
+function FACTION:OnTransfered(client)
+	local character = client:GetCharacter()
+
 	character:SetModel(self.models[1])
 end
 
 function FACTION:OnNameChanged(client, oldValue, value)
-	local character = client:GetCharacter()
 
-	if (!Schema:IsCombineRank(oldValue, "RCT") and Schema:IsCombineRank(value, "RCT")) then
-		character:JoinClass(CLASS_MPR)
-	elseif (!Schema:IsCombineRank(oldValue, "OfC") and Schema:IsCombineRank(value, "OfC")) then
-		character:SetModel("models/policetrench.mdl")
-	elseif (!Schema:IsCombineRank(oldValue, "EpU") and Schema:IsCombineRank(value, "EpU")) then
-		character:JoinClass(CLASS_EMP)
-
-		character:SetModel("models/leet_police2.mdl")
-	elseif (!Schema:IsCombineRank(oldValue, "DvL") and Schema:IsCombineRank(value, "DvL")) then
-		character:SetModel("models/eliteshockcp.mdl")
-	elseif (!Schema:IsCombineRank(oldValue, "SeC") and Schema:IsCombineRank(value, "SeC")) then
-		character:SetModel("models/sect_police2.mdl")
-	elseif (!Schema:IsCombineRank(oldValue, "SCN") and Schema:IsCombineRank(value, "SCN")
-	or !Schema:IsCombineRank(oldValue, "SHIELD") and Schema:IsCombineRank(value, "SHIELD")) then
-		character:JoinClass(CLASS_MPS)
-	end
-
-	if (!Schema:IsCombineRank(oldValue, "GHOST") and Schema:IsCombineRank(value, "GHOST")) then
-		character:SetModel("models/eliteghostcp.mdl")
-	end
 end
 
 FACTION_MPF = FACTION.index
+
+Schema:SetFactionGroup(FACTION_MPF, FACTION_GROUP_COMBINE)

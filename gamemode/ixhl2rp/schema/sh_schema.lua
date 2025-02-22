@@ -1,10 +1,11 @@
 
 Schema.name = "HL2 RP"
-Schema.author = "nebulous.cloud"
-Schema.description = "A schema based on Half-Life 2."
+Schema.author = "CELLAR Team"
+Schema.description = ""
 
 -- Include netstream
 ix.util.Include("libs/thirdparty/sh_netstream2.lua")
+ix.util.Include("libs/sh_factiongroups.lua")
 
 ix.util.Include("sh_configs.lua")
 ix.util.Include("sh_commands.lua")
@@ -20,158 +21,163 @@ ix.util.Include("meta/sh_player.lua")
 ix.util.Include("meta/sv_player.lua")
 ix.util.Include("meta/sh_character.lua")
 
-ix.flag.Add("v", "Access to light blackmarket goods.")
-ix.flag.Add("V", "Access to heavy blackmarket goods.")
+-- modele cp man
+for i = 1, 9 do
+	ix.anim.SetModelClass("models/wn7new/metropolice/male/cca_male_0"..i..".mdl", "metrocop")
+end
+ix.anim.SetModelClass("models/wn7new/metropolice/male/cca_male_10.mdl", "metrocop")
 
-ix.anim.SetModelClass("models/eliteghostcp.mdl", "metrocop")
-ix.anim.SetModelClass("models/eliteshockcp.mdl", "metrocop")
-ix.anim.SetModelClass("models/leet_police2.mdl", "metrocop")
-ix.anim.SetModelClass("models/sect_police2.mdl", "metrocop")
-ix.anim.SetModelClass("models/policetrench.mdl", "metrocop")
+-- modele cp wyman
+for i = 1, 6 do
+	ix.anim.SetModelClass("models/wn7new/metropolice/female/cca_female_0"..i..".mdl", "metrocop")
+end
+
+-- modele citizenow wyman
+for i = 1, 6 do
+	ix.anim.SetModelClass("models/willardnetworks/citizens/female/c3_female_0"..i..".mdl", "citizen_female")
+end
+
+--modele citizenow man
+ix.anim.SetModelClass("models/willardnetworks/citizens/male/c3_male_10.mdl", "citizen_male")
+
+for i = 1, 9 do
+	ix.anim.SetModelClass("models/willardnetworks/citizens/male/c3_male_0"..i..".mdl", "citizen_male")
+end
+
+
+-- koniec
+
 
 function Schema:ZeroNumber(number, length)
 	local amount = math.max(0, length - string.len(number))
 	return string.rep("0", amount)..tostring(number)
 end
 
-function Schema:IsCombineRank(text, rank)
-	return string.find(text, "[%D+]"..rank.."[%D+]")
-end
-
-do
-	local CLASS = {}
-	CLASS.color = Color(150, 100, 100)
-	CLASS.format = "Dispatch broadcasts \"%s\""
-
-	function CLASS:CanSay(speaker, text)
-		if (!speaker:IsDispatch()) then
-			speaker:NotifyLocalized("notAllowed")
-
-			return false
-		end
-	end
-
-	function CLASS:OnChatAdd(speaker, text)
-		chat.AddText(self.color, string.format(self.format, text))
-	end
-
-	ix.chat.Register("dispatch", CLASS)
-end
-
-do
-	local CLASS = {}
-	CLASS.color = Color(75, 150, 50)
-	CLASS.format = "%s radios in \"%s\""
-
-	function CLASS:CanHear(speaker, listener)
-		local character = listener:GetCharacter()
-		local inventory = character:GetInventory()
-		local bHasRadio = false
-
-		for k, v in pairs(inventory:GetItemsByUniqueID("handheld_radio", true)) do
-			if (v:GetData("enabled", false) and speaker:GetCharacter():GetData("frequency") == character:GetData("frequency")) then
-				bHasRadio = true
-				break
+function Schema:IsStringCombineRank(text, rank)
+	if istable(rank) then
+		for k, v in ipairs(rank) do
+			if self:IsStringCombineRank(text, v) then
+				return true
 			end
 		end
+	else
+		text = text:lower()
+		local founded_ranks = string.match(text,"ow%:.-%.(.*)-%d+") or string.match(text,"cca%:.-%.(.*)%.%d+")
 
-		return bHasRadio
+		if founded_ranks then
+			for crank in string.gmatch(founded_ranks, "[%a%-%_%d]+") do
+				if crank == rank then
+					return true
+				end
+			end
+		end
 	end
+end
 
-	function CLASS:OnChatAdd(speaker, text)
-		text = speaker:IsCombine() and string.format("<:: %s ::>", text) or text
-		chat.AddText(self.color, string.format(self.format, speaker:Name(), text))
+function Schema:IsPlayerCombineRank(player, rank)
+	local faction = player:Team()
+	
+	if self:GetFactionGroup(faction) == FACTION_GROUP_COMBINE then
+		if istable(rank) then
+			for k, v in ipairs(rank) do
+				if self:IsPlayerCombineRank(player, v) then
+					return true
+				end
+			end
+		else
+			local name = player:Name()
+			name = name:lower()
+			
+			local founded_ranks = string.match(name, (faction == FACTION_OTA and "ow" or "cca").."%:.-%.(.*)"..(faction == FACTION_OTA and "-%d+" or "%.%d+"))
+
+			if founded_ranks then
+				for crank in string.gmatch(founded_ranks, "[%a%-%_%d]+") do
+					if crank == rank then
+						return true
+					end
+				end
+			end
+		end
 	end
-
-	ix.chat.Register("radio", CLASS)
 end
 
 do
-	local CLASS = {}
-	CLASS.color = Color(255, 255, 175)
-	CLASS.format = "%s radios in \"%s\""
-
-	function CLASS:GetColor(speaker, text)
-		if (LocalPlayer():GetEyeTrace().Entity == speaker) then
-			return Color(175, 255, 175)
-		end
-
-		return self.color
-	end
-
-	function CLASS:CanHear(speaker, listener)
-		if (ix.chat.classes.radio:CanHear(speaker, listener)) then
-			return false
-		end
-
-		local chatRange = ix.config.Get("chatRange", 280)
-
-		return (speaker:GetPos() - listener:GetPos()):LengthSqr() <= (chatRange * chatRange)
-	end
-
-	function CLASS:OnChatAdd(speaker, text)
-		text = speaker:IsCombine() and string.format("<:: %s ::>", text) or text
-		chat.AddText(self.color, string.format(self.format, speaker:Name(), text))
-	end
-
-	ix.chat.Register("radio_eavesdrop", CLASS)
-end
-
-do
-	local CLASS = {}
-	CLASS.color = Color(175, 125, 100)
-	CLASS.format = "%s requests \"%s\""
-
-	function CLASS:CanHear(speaker, listener)
-		return listener:IsCombine() or speaker:Team() == FACTION_ADMIN
-	end
-
-	function CLASS:OnChatAdd(speaker, text)
-		chat.AddText(self.color, string.format(self.format, speaker:Name(), text))
-	end
-
-	ix.chat.Register("request", CLASS)
-end
-
-do
-	local CLASS = {}
-	CLASS.color = Color(175, 125, 100)
-	CLASS.format = "%s requests \"%s\""
-
-	function CLASS:CanHear(speaker, listener)
-		if (ix.chat.classes.request:CanHear(speaker, listener)) then
-			return false
-		end
-
-		local chatRange = ix.config.Get("chatRange", 280)
-
-		return (speaker:Team() == FACTION_CITIZEN and listener:Team() == FACTION_CITIZEN)
-		and (speaker:GetPos() - listener:GetPos()):LengthSqr() <= (chatRange * chatRange)
-	end
-
-	function CLASS:OnChatAdd(speaker, text)
-		chat.AddText(self.color, string.format(self.format, speaker:Name(), text))
-	end
-
-	ix.chat.Register("request_eavesdrop", CLASS)
-end
-
-do
-	local CLASS = {}
-	CLASS.color = Color(150, 125, 175)
-	CLASS.format = "%s broadcasts \"%s\""
-
-	function CLASS:CanSay(speaker, text)
-		if (speaker:Team() != FACTION_ADMIN) then
-			speaker:NotifyLocalized("notAllowed")
-
-			return false
+	function Schema:GetPlayerCombineRank(player)
+		for k, v in pairs(self.ranks:GetStoredRanks()) do
+			if self:IsPlayerCombineRank(player, k) then
+				if !v.isOTARank or (v.isOTARank and player:Team() == FACTION_OTA) then
+					return v
+				end
+			end
 		end
 	end
 
-	function CLASS:OnChatAdd(speaker, text)
-		chat.AddText(self.color, string.format(self.format, speaker:Name(), text))
+	function Schema:GetPlayerCombineSpec(player)
+		for k, v in pairs(self.ranks:GetStoredSpecials()) do
+			if self:IsPlayerCombineRank(player, k) then
+				if !v.isOTASpecial or (v.isOTASpecial and player:Team() == FACTION_OTA) then
+					return v
+				end
+			end
+		end
 	end
 
-	ix.chat.Register("broadcast", CLASS)
+	function Schema:GetPlayerCombineSpecials(player)
+		local spec = {}
+		for k, v in pairs(self.ranks:GetStoredSpecials()) do
+			if self:IsPlayerCombineRank(player, k) then
+				if !v.isOTASpecial or (v.isOTASpecial and player:Team() == FACTION_OTA) then
+					table.insert(spec, v)
+				end
+			end
+		end
+		return spec
+	end
 end
+
+function Schema:GetCombinePlayers()
+	local result = {}
+
+	for _, v in ipairs(player.GetAll()) do
+		if (v:IsCombine()) then
+			result[#result + 1] = v
+		end
+	end
+
+	return result
+end
+
+sound.Add({
+	name = "MPF.RadioOn",
+	channel = CHAN_VOICE,
+	volume = 1.0,
+	level = 90,
+	pitch = 100,
+	sound = {
+		"ambient/levels/prison/radio_random10.wav",
+		"ambient/levels/prison/radio_random11.wav",
+		"ambient/levels/prison/radio_random12.wav",
+		"ambient/levels/prison/radio_random13.wav",
+		"ambient/levels/prison/radio_random14.wav",
+		"ambient/levels/prison/radio_random15.wav",
+	}
+})
+
+sound.Add({
+	name = "MPF.RadioOff",
+	channel = CHAN_VOICE,
+	volume = 1.0,
+	level = 90,
+	pitch = 100,
+	sound = {
+		"ambient/levels/prison/radio_random1.wav",
+		"ambient/levels/prison/radio_random2.wav",
+		"ambient/levels/prison/radio_random3.wav",
+		"ambient/levels/prison/radio_random4.wav",
+		"ambient/levels/prison/radio_random5.wav",
+		"ambient/levels/prison/radio_random6.wav",
+		"ambient/levels/prison/radio_random7.wav",
+		"ambient/levels/prison/radio_random8.wav",
+		"ambient/levels/prison/radio_random9.wav",
+	}
+})

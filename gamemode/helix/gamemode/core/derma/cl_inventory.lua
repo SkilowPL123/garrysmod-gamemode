@@ -265,7 +265,7 @@ function PANEL:ExtraPaint(width, height)
 end
 
 function PANEL:Paint(width, height)
-	surface.SetDrawColor(0, 0, 0, 85)
+	surface.SetDrawColor(255, 0, 0, 85)
 	surface.DrawRect(2, 2, width - 4, height - 4)
 
 	self:ExtraPaint(width, height)
@@ -434,6 +434,14 @@ function PANEL:BuildSlots()
 
 	self.slots = self.slots or {}
 
+	local function PaintSlot(slot, w, h)
+		surface.SetDrawColor(35, 35, 35, 20)
+		surface.DrawRect(1, 1, w - 2, h - 2)
+
+		surface.SetDrawColor(ColorAlpha(cellar_blue, 86))
+		surface.DrawOutlinedRect(1, 1, w - 2, h - 2)
+	end
+
 	for _, v in ipairs(self.slots) do
 		for _, v2 in ipairs(v) do
 			v2:Remove()
@@ -452,9 +460,7 @@ function PANEL:BuildSlots()
 			slot.gridY = y
 			slot:SetPos((x - 1) * iconSize + 4, (y - 1) * iconSize + self:GetPadding(2))
 			slot:SetSize(iconSize, iconSize)
-			slot.Paint = function(panel, width, height)
-				derma.SkinFunc("PaintInventorySlot", panel, width, height)
-			end
+			slot.Paint = PaintSlot
 
 			self.slots[x][y] = slot
 		end
@@ -774,12 +780,12 @@ hook.Add("CreateMenuButtons", "ixInventory", function(tabs)
 			ix.gui.inv1 = panel
 
 			if (ix.option.Get("openBags", true)) then
-				for k, _ in inventory:Iter() do
-					if (!k.isBag) then
+				for _, v in pairs(inventory:GetItems()) do
+					if (!v.isBag) then
 						continue
 					end
 
-					k.functions.View.OnClick(k)
+					v.functions.View.OnClick(v)
 				end
 			end
 

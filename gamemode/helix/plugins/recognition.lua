@@ -45,6 +45,11 @@ do
 			if (faction and faction.isGloballyRecognized) then
 				return true
 			end
+
+			if (faction and faction.isLocallyRecognized) then
+				return (char:GetFaction() == other:GetFaction())
+				or (Schema:GetFactionGroup(char:GetFaction()) == Schema:GetFactionGroup(other:GetFaction()))
+			end
 		end
 
 		local recognized = char:GetData("rgn", "")
@@ -170,7 +175,7 @@ else
 
 				class = ix.chat.classes[class]
 
-				for _, v in player.Iterator() do
+				for _, v in ipairs(player.GetAll()) do
 					if (client != v and v:GetCharacter() and class:CanHear(client, v)) then
 						targets[#targets + 1] = v
 					end

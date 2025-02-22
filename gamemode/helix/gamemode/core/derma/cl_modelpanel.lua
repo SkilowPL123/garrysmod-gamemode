@@ -108,10 +108,6 @@ function PANEL:DrawModel()
 	end
 
 	self.Entity:DrawModel()
-
-	if (self.enableHook) then
-		hook.Run("PostDrawHelixModelView", self, self.Entity)
-	end
 end
 
 function PANEL:OnMousePressed()

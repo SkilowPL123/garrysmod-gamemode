@@ -1,16 +1,16 @@
 LANGUAGE = {
-	area = "Зона",
-	areas = "Зоны",
-	areaEditMode = "Редактирование зоны",
-	areaNew = "Новая зона",
-	areaAlreadyExists = "Зона с таким названием уже существует!",
-	areaDoesntExist = "Зона с таким названием не существует!",
-	areaInvalidType = "Вы указали неверный тип зоны!",
-	areaEditTip = "Нажмите, чтобы начать создание зоны. Щелкните правой кнопкой мыши, чтобы выйти.",
-	areaFinishTip = "Нажмите еще раз, чтобы закончить создание зоны. Щелкните правой кнопкой мыши, чтобы вернуться.",
-	areaRemoveTip = "Нажмите перезарядку, чтобы удалить зону, в которой вы находитесь.",
-	areaDeleteConfirm = "Вы уверены, что хотите удалить зону \"%s\"?",
-	areaDelete = "Удалить зону",
+	area = "Strefa",
+	areas = "Strefy",
+	areaEditMode = "Edycja strefy",
+	areaNew = "Nowa strefa",
+	areaAlreadyExists = "Strefa o tej nazwie już istnieje!",
+	areaDoesntExist = "Strefa o takiej nazwie nie istnieje!",
+	areaInvalidType = "Podano zły typ strefy!",
+	areaEditTip = "Kliknij, aby rozpocząć tworzenie strefy. Kliknij prawy przycisk myszy, aby wyjść.",
+	areaFinishTip = "Kliknij ponownie, aby zakończyć tworzenie strefy. Kliknij prawy przycisk myszy, aby wrócić.",
+	areaRemoveTip = "Naciśnij klawisz R, aby usunąć obszar, w którym się znajdujesz.",
+	areaDeleteConfirm = "Czy na pewno chcesz usunąć strefę? \"%s\"?",
+	areaDelete = "Usuń strefę",
 
-	cmdAreaEdit = "Вход в режим редактирования зоны."
+	cmdAreaEdit = "Wejście w tryb edycji strefy."
 }

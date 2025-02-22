@@ -34,20 +34,20 @@ if (CLIENT) then
 	function pace.LoadParts(name, clear, override_part) end
 
 	-- Prohibits players from deleting their own PAC3 outfit.
-	concommand.Add("pac_clear_parts", function()
-		RunConsoleCommand("pac_restart")
-	end)
+	--concommand.Add("pac_clear_parts", function()
+	--	RunConsoleCommand("pac_restart")
+	--end)
 
 	-- you need the proper permission to open the editor
 	function PLUGIN:PrePACEditorOpen()
-		if (!CAMI.PlayerHasAccess(LocalPlayer(), "Helix - Manage PAC", nil)) then
+		if !LocalPlayer():IsDonator() and !CAMI.PlayerHasAccess(LocalPlayer(), "Helix - Manage PAC", nil) then
 			return false
 		end
 	end
 end
 
 function PLUGIN:pac_CanWearParts(client)
-	if (!CAMI.PlayerHasAccess(client, "Helix - Manage PAC", nil)) then
+	if !client:IsDonator() and !CAMI.PlayerHasAccess(client, "Helix - Manage PAC", nil) then
 		return false
 	end
 end
@@ -121,9 +121,9 @@ if (SERVER) then
 		if (curChar) then
 			local inv = curChar:GetInventory()
 
-			for k, _ in inv:Iter() do
-				if (k:GetData("equip") == true and k.pacData) then
-					client:AddPart(k.uniqueID, k)
+			for _, v in pairs(inv:GetItems()) do
+				if (v:GetData("equip") == true and v.pacData) then
+					client:AddPart(v.uniqueID, v)
 				end
 			end
 		end
@@ -156,9 +156,9 @@ if (SERVER) then
 			local character = client:GetCharacter()
 			local inventory = character:GetInventory()
 
-			for k, _ in inventory:Iter() do
-				if (k:GetData("equip") == true and k.pacData) then
-					client:AddPart(k.uniqueID, k)
+			for _, v in pairs(inventory:GetItems()) do
+				if (v:GetData("equip") == true and v.pacData) then
+					client:AddPart(v.uniqueID, v)
 				end
 			end
 		end
@@ -207,7 +207,7 @@ else
 		end
 
 		if (IsValid(pac.LocalPlayer)) then
-			for _, v in player.Iterator() do
+			for _, v in ipairs(player.GetAll()) do
 				local character = v:GetCharacter()
 
 				if (character) then
@@ -302,7 +302,7 @@ else
 			end
 
 			if (class:find("HL2MPRagdoll")) then
-				for _, v in player.Iterator() do
+				for _, v in ipairs(player.GetAll()) do
 					if (v:GetRagdollEntity() == entity) then
 						entity.objCache = v
 					end

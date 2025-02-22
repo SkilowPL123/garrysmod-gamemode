@@ -243,8 +243,6 @@ end
 -- @bool[opt=false] bAllowPatterns Whether or not to accept Lua patterns in `identifier`
 -- @treturn player Player that matches the given search query - this will be `nil` if a player could not be found
 function ix.util.FindPlayer(identifier, bAllowPatterns)
-	if (#identifier == 0) then return end
-
 	if (string.find(identifier, "STEAM_(%d+):(%d+):(%d+)")) then
 		return player.GetBySteamID(identifier)
 	end
@@ -253,7 +251,7 @@ function ix.util.FindPlayer(identifier, bAllowPatterns)
 		identifier = string.PatternSafe(identifier)
 	end
 
-	for _, v in player.Iterator() do
+	for _, v in ipairs(player.GetAll()) do
 		if (ix.util.StringMatches(v:Name(), identifier)) then
 			return v
 		end
@@ -523,7 +521,7 @@ if (CLIENT) then
 			if (wordWidth > maxWidth) then
 				local newWidth
 
-				for i2 = 1, word:utf8len() do
+				for i2 = 1, string.len(word) do
 					local character = word[i2]
 					newWidth = surface.GetTextSize(line .. character)
 
@@ -540,8 +538,7 @@ if (CLIENT) then
 				continue
 			end
 
-			local space = (i == 1) and "" or " "
-			local newLine = line .. space .. word
+			local newLine = line .. " " .. word
 			local newWidth = surface.GetTextSize(newLine)
 
 			if (newWidth > maxWidth) then
@@ -694,7 +691,8 @@ end
 
 -- Vector extension, courtesy of code_gs
 do
-	local VECTOR = FindMetaTable("Vector")
+	local R = debug.getregistry()
+	local VECTOR = R.Vector
 	local CrossProduct = VECTOR.Cross
 	local right = Vector(0, -1, 0)
 
@@ -1140,25 +1138,6 @@ function ix.util.EmitQueuedSounds(entity, sounds, delay, spacing, volume, pitch)
 
 	-- Return how long it took for the whole thing.
 	return delay
-end
-
---- Merges the contents of the second table with the content in the first one. The destination table will be modified.
---- If element is table but not metatable object, value's elements will be changed only.
--- @realm shared
--- @tab destination The table you want the source table to merge with
--- @tab source The table you want to merge with the destination table
--- @return table
-function ix.util.MetatableSafeTableMerge(destination, source)
-	for k, v in pairs(source) do
-		if (istable(v) and istable(destination[k]) and getmetatable(v) == nil) then
-			-- don't overwrite one table with another
-			-- instead merge them recurisvely
-			ix.util.MetatableSafeTableMerge(destination[k], v);
-		else
-			destination[ k ] = v;
-		end
-	end
-	return destination;
 end
 
 ix.util.Include("helix/gamemode/core/meta/sh_entity.lua")

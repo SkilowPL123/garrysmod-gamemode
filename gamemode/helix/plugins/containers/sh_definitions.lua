@@ -63,6 +63,7 @@ ix.container.Register("models/props_c17/furniturefridge001a.mdl", {
 	description = "A metal box for keeping food in.",
 	width = 2,
 	height = 3,
+	bRefrigerator = true
 })
 
 ix.container.Register("models/props_wasteland/kitchen_fridge001a.mdl", {
@@ -123,4 +124,11 @@ ix.container.Register("models/props_c17/cashregister01a.mdl", {
 	description = "A register with some buttons and a drawer.",
 	width = 2,
 	height = 1
+})
+
+ix.container.Register("models/props_office/file_cabinet_large_static.mdl", {
+	name = "Archiwum",
+	description = "Można tu umieścić dużo książek lub innych ciekawych rzeczy.",
+	width = 8,
+	height = 4
 })

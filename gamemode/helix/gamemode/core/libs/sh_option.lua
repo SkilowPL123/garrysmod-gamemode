@@ -93,8 +93,8 @@ function ix.option.Add(key, optionType, default, data)
 	-- 	end
 	ix.option.stored[key] = {
 		key = key,
-		phrase = data.phrase or "opt" .. upperName,
-		description = data.description or "optd" .. upperName,
+		phrase = "opt" .. upperName,
+		description = "optd" .. upperName,
 		type = optionType,
 		default = default,
 		min = data.min or 0,

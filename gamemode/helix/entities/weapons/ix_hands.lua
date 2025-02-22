@@ -54,6 +54,8 @@ SWEP.holdDistance = 64
 SWEP.maxHoldDistance = 96 -- how far away the held object is allowed to travel before forcefully dropping
 SWEP.maxHoldStress = 4000 -- how much stress the held object can undergo before forcefully dropping
 
+SWEP.IsFists = true
+
 -- luacheck: globals ACT_VM_FISTS_DRAW ACT_VM_FISTS_HOLSTER
 ACT_VM_FISTS_DRAW = 2
 ACT_VM_FISTS_HOLSTER = 1
@@ -402,16 +404,7 @@ function SWEP:PrimaryAttack()
 
 	timer.Simple(0.055, function()
 		if (IsValid(self) and IsValid(self:GetOwner())) then
-			local damage = self.Primary.Damage
-			local context = {damage = damage}
-			local result = hook.Run("GetPlayerPunchDamage", self:GetOwner(), damage, context)
-
-			if (result != nil) then
-				damage = result
-			else
-				damage = context.damage
-			end
-
+			local damage = 25
 			self:GetOwner():LagCompensation(true)
 				local data = {}
 					data.start = self:GetOwner():GetShootPos()
@@ -427,10 +420,10 @@ function SWEP:PrimaryAttack()
 							damageInfo:SetAttacker(self:GetOwner())
 							damageInfo:SetInflictor(self)
 							damageInfo:SetDamage(damage)
-							damageInfo:SetDamageType(DMG_GENERIC)
+							damageInfo:SetDamageType(DMG_CLUB)
 							damageInfo:SetDamagePosition(trace.HitPos)
 							damageInfo:SetDamageForce(self:GetOwner():GetAimVector() * 1024)
-						entity:DispatchTraceAttack(damageInfo, data.start, data.endpos)
+						entity:DispatchTraceAttack(damageInfo, trace)
 
 						self:GetOwner():EmitSound("physics/body/body_medium_impact_hard"..math.random(1, 6)..".wav", 80)
 					end
@@ -438,6 +431,7 @@ function SWEP:PrimaryAttack()
 
 				hook.Run("PlayerThrowPunch", self:GetOwner(), trace)
 			self:GetOwner():LagCompensation(false)
+
 		end
 	end)
 end

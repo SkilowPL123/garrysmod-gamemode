@@ -115,7 +115,7 @@ if (CLIENT) then
 		local client = LocalPlayer()
 		local position = client:GetPos()
 
-		for _, v in player.Iterator() do
+		for _, v in ipairs(player.GetAll()) do
 			if (v == client) then
 				continue
 			end
@@ -132,6 +132,10 @@ if (CLIENT) then
 
 			local text = v.ixChatClassText
 			local range = v.ixChatClassRange
+
+			if (!text) then
+				continue
+			end
 
 			local bAnimation = !ix.option.Get("disableAnimations", false)
 			local fraction

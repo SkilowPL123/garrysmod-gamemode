@@ -83,7 +83,7 @@ function ix.plugin.Load(uniqueID, path, isSingleFile, variable)
 		end
 
 		ix.plugin.list[uniqueID] = PLUGIN
-		_G[variable] = oldPlugin
+		_G[variable] = nil
 	end
 
 	if (PLUGIN.OnLoaded) then
@@ -244,9 +244,7 @@ function ix.plugin.LoadEntities(path)
 end
 
 function ix.plugin.Initialize()
-	if SERVER then
-		ix.plugin.unloaded = ix.data.Get("unloaded", {}, true, true)
-	end
+	ix.plugin.unloaded = ix.data.Get("unloaded", {}, true, true)
 
 	ix.plugin.LoadFromDir("helix/plugins")
 
@@ -283,7 +281,7 @@ function ix.plugin.SetUnloaded(uniqueID, state, bNoSave)
 
 		ix.plugin.unloaded[uniqueID] = true
 	elseif (ix.plugin.unloaded[uniqueID]) then
-		ix.plugin.unloaded[uniqueID] = false
+		ix.plugin.unloaded[uniqueID] = nil
 	else
 		return false
 	end

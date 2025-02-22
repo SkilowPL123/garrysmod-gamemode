@@ -1,4 +1,3 @@
-
 AddCSLuaFile()
 
 ENT.Type = "anim"
@@ -57,18 +56,6 @@ if (SERVER) then
 		self.dispenser:Activate()
 		self:DeleteOnRemove(self.dispenser)
 
-		self.dummy = ents.Create("prop_physics")
-		self.dummy:SetModel("models/weapons/w_package.mdl")
-		self.dummy:SetPos(self:GetPos())
-		self.dummy:SetAngles(self:GetAngles())
-		self.dummy:SetMoveType(MOVETYPE_NONE)
-		self.dummy:SetNotSolid(true)
-		self.dummy:SetNoDraw(true)
-		self.dummy:SetParent(self.dispenser, 1)
-		self.dummy:Spawn()
-		self.dummy:Activate()
-		self:DeleteOnRemove(self.dummy)
-
 		local physics = self.dispenser:GetPhysicsObject()
 		physics:EnableMotion(false)
 		physics:Sleep()
@@ -77,22 +64,52 @@ if (SERVER) then
 		self.nextUseTime = CurTime()
 	end
 
-	function ENT:SpawnRation(callback, releaseDelay)
+	function ENT:CreateDummyRation()
+		local entity = ents.Create("prop_physics")
+		
+		entity:SetAngles(self:GetAngles())
+		entity:SetModel("models/weapons/w_package.mdl")
+		entity:Spawn()
+		
+		return entity
+	end
+
+	function ENT:SpawnRation(client, callback, releaseDelay)
 		releaseDelay = releaseDelay or 1.2
 
-		local itemTable = ix.item.Get("ration")
+		-- TODO: move to callback in faction function
+		local character = client:GetCharacter()
+		local faction = ix.faction.indices[character:GetFaction()]
 
-		self.dummy:SetModel(itemTable:GetModel())
-		self.dummy:SetNoDraw(false)
+		local ration = "ration_tier_0"
 
-		if (callback) then
-			callback()
-		end
+		ration = faction.GetRationType and faction:GetRationType(character) or ration
+
+		local entity = self:CreateDummyRation()
+		entity:SetModel((ix.item.list[ration] or {}).model)
+		entity:SetNotSolid(true)
+		entity:SetParent(self.dispenser)
+
+		timer.Simple(0, function()
+			entity:Fire("SetParentAttachment", "package_attachment", 0)
+
+			if (callback) then
+				callback(entity)
+			end
+		end)
 
 		timer.Simple(releaseDelay, function()
-			ix.item.Spawn("ration", self.dummy:GetPos(), function(item, entity)
-				self.dummy:SetNoDraw(true)
-			end, self.dummy:GetAngles())
+			local position = entity:GetPos()
+			local angles = entity:GetAngles()
+			
+			entity:CallOnRemove("CreateRation", function()
+				ix.item.Spawn(ration, position, function(itemTable, entity)
+					
+				end, angles)
+			end)
+			
+			entity:SetNoDraw(true)
+			entity:Remove()
 
 			-- display cooldown notice
 			timer.Simple(releaseDelay, function()
@@ -107,9 +124,9 @@ if (SERVER) then
 		end)
 	end
 
-	function ENT:StartDispense()
+	function ENT:StartDispense(client)
 		self:SetDisplay(3)
-		self:SpawnRation(function()
+		self:SpawnRation(client, function()
 			self.dispenser:Fire("SetAnimation", "dispense_package")
 			self:EmitSound("ambient/machines/combine_terminal_idle4.wav")
 		end)
@@ -133,16 +150,21 @@ if (SERVER) then
 		if (!self.canUse or self.nextUseTime > CurTime()) then
 			return
 		end
+		if (client:IsCombine() and client:KeyDown(IN_SPEED)) then
+			self:SetEnabled(!self:GetEnabled())
+			self:EmitSound(self:GetEnabled() and "buttons/combine_button1.wav" or "buttons/combine_button2.wav")
 
-		if (client:Team() == FACTION_CITIZEN) then
+			Schema:SaveRationDispensers()
+			self.nextUseTime = CurTime() + 2
+		else
 			if (!self:GetEnabled()) then
 				self:DisplayError(6)
 				return
 			end
 
-			local cid = client:GetCharacter():GetInventory():HasItem("cid")
+			local cid = client:GetCharacter():GetEquipment():HasItemOfBase("base_cards", {equip = true})
 
-			if (!cid) then
+			if (!cid) or (client.isUsingRDispenser and client.isUsingRDispenser != self) then
 				self:DisplayError(7)
 				return
 			end
@@ -151,6 +173,7 @@ if (SERVER) then
 			self.canUse = false
 			self:SetDisplay(2)
 			self:EmitSound("ambient/machines/combine_terminal_idle2.wav")
+			client.isUsingRDispenser = self
 
 			-- check cid ration time and dispense if allowed
 			timer.Simple(math.random(1.8, 2.2), function()
@@ -158,20 +181,17 @@ if (SERVER) then
 					self:SetDisplay(8)
 					self:EmitSound("ambient/machines/combine_terminal_idle3.wav")
 
-					timer.Simple(10.2, function()
-						self:StartDispense()
-						cid:SetData("nextRationTime", os.time() + ix.config.Get("rationInterval", 1))
+					timer.Simple(math.random(1, 3), function()
+						self:StartDispense(client)
 					end)
+
+					cid:SetData("nextRationTime", os.time() + ix.config.Get("rationInterval", 1))
 				else
 					self:DisplayError(4)
 				end
+				
+				client.isUsingRDispenser = nil
 			end)
-		elseif (client:IsCombine()) then
-			self:SetEnabled(!self:GetEnabled())
-			self:EmitSound(self:GetEnabled() and "buttons/combine_button1.wav" or "buttons/combine_button2.wav")
-
-			Schema:SaveRationDispensers()
-			self.nextUseTime = CurTime() + 2
 		end
 	end
 

@@ -124,10 +124,6 @@ function GM:TranslateActivity(client, act)
 end
 
 function GM:CanPlayerUseBusiness(client, uniqueID)
-	if (!ix.config.Get("allowBusiness", true)) then
-		return false
-	end
-
 	local itemTable = ix.item.list[uniqueID]
 
 	if (!client:GetCharacter()) then
@@ -423,13 +419,15 @@ function GM:CanPlayerUseCharacter(client, character)
 	local banned = character:GetData("banned")
 
 	if (banned) then
-		if (!isnumber(banned)) then
-            return false, "@charBanned"
-        else
-            if (banned > os.time()) then
-                return false, "@charBannedTemp"
-            end
-        end
+		if (isnumber(banned)) then
+			if (banned < os.time()) then
+				return
+			end
+
+			return false, "@charBannedTemp"
+		end
+
+		return false, "@charBanned"
 	end
 
 	local bHasWhitelist = client:HasWhitelist(character:GetFaction())
@@ -494,6 +492,14 @@ do
 		end
 
 		return self.BaseClass:CanTool(client, trace, tool)
+	end
+end
+
+function GM:SetupMove(client, moveData)
+	if (!client:Alive()) then
+		moveData:SetForwardSpeed(0)
+		moveData:SetSideSpeed(0)
+		moveData:SetUpSpeed(0)
 	end
 end
 
@@ -575,8 +581,8 @@ function GM:CanTransferItem(itemObject, curInv, inventory)
 
 	-- don't allow transferring items that are in use
 	if (inventory) then
-		for k, _ in inventory:Iter() do
-			if (k:GetData("equip") == true) then
+		for _, v in pairs(inventory:GetItems()) do
+			if (v:GetData("equip") == true) then
 				local owner = itemObject:GetOwner()
 
 				if (owner and IsValid(owner)) then
