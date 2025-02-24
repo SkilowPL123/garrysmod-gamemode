@@ -60,7 +60,7 @@ FACTION.GetDefaultName = nil
 
 
 function FACTION:GetDefaultName(client)
-	return "CCA:c03." .. Schema:ZeroNumber(math.random(1, 9999), 4), true
+	return "CCA:c17." .. Schema:ZeroNumber(math.random(1, 9999), 4), true
 end
 
 function FACTION:GetRationType(character)
